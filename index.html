@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canal 5 DNPlus • Espectadores</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- HLS.js para reproducción de canales/listas .m3u8 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- MQTT.js para sincronización en tiempo real con el Panel Emisor -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-sky-600 selection:text-white">
+
+    <!-- Cabecera Canal 5 DNPlus -->
+    <header class="bg-blue-950/95 backdrop-blur-md border-b border-blue-900/60 sticky top-0 z-40 w-full shadow-lg">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 min-h-16 py-2 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 overflow-hidden flex items-center justify-center p-1 shadow-md shrink-0">
+                    <img
+                        src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg"
+                        alt="Logo Canal 5 DNPlus"
+                        onerror="this.onerror=null;this.src='https://placehold.co/80x80/0f172a/38bdf8?text=DN5';"
+                        class="w-full h-full object-contain rounded-xl"
+                    >
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5 truncate">
+                        Canal 5 <span class="text-sky-400">DNPlus</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400 truncate">Señal Digital en Vivo 24/7</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <button
+                    type="button"
+                    onclick="forceSyncSignal(true)"
+                    class="bg-blue-800/80 hover:bg-blue-700 active:scale-95 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
+                >
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Reconectar</span>
+                </button>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    EN VIVO
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido principal: Reproductor en vivo y secciones de espectadores -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
+
+        <!-- Contenedor del Reproductor en Vivo estilo televisión (sin barra de retroceso/adelanto) -->
+        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-blue-500/30 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col items-center justify-center">
+            <!-- Marca superior de señal pequeña y discreta en esquina -->
+            <div class="absolute top-2 left-2 z-20 bg-slate-950/75 backdrop-blur-sm px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1 pointer-events-none">
+                <img src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg" alt="DNPlus TV" class="w-3 h-3 rounded-sm object-contain bg-white/10 p-0.5 shrink-0">
+                <span id="player-signal-badge" class="text-[8px] font-bold tracking-tight text-white/90 uppercase leading-none">DNPlus TV</span>
+                <span class="text-[7px] font-extrabold px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-400 leading-none">ALTA</span>
+            </div>
+
+            <!-- Botón flotante de audio en vivo: solo ícono pequeño blanco sin texto -->
+            <button
+                type="button"
+                id="muteToggleBtn"
+                onclick="toggleMuteLive()"
+                title="Volumen"
+                aria-label="Volumen"
+                class="absolute bottom-2.5 right-2.5 z-20 w-7 h-7 rounded-lg bg-slate-950/85 hover:bg-slate-900 text-white border border-white/15 flex items-center justify-center transition cursor-pointer"
+            >
+                <i id="muteIcon" class="fa-solid fa-volume-xmark text-[10px] text-white"></i>
+            </button>
+
+            <!-- Pantalla de sintonía inicial -->
+            <div id="waiting-overlay" class="absolute inset-0 z-10 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
+                <div class="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4 animate-pulse">
+                    <i class="fa-solid fa-satellite-dish text-2xl text-sky-400"></i>
+                </div>
+                <h2 class="text-base sm:text-lg font-extrabold text-white">Sintonizando Señal 1 • Canal 5 DNPlus TV...</h2>
+                <p class="text-xs text-slate-400 max-w-sm mt-1">
+                    Conectando transmisión continua en calidad ALTA.
+                </p>
+            </div>
+
+            <!-- Video en vivo sin controles de retroceso ni línea de tiempo -->
+            <video id="viewerPlayer" class="w-full h-full object-contain bg-black" autoplay muted playsinline></video>
+        </div>
+
+        <!-- Barra de información del programa en vivo -->
+        <div class="bg-slate-900/90 border border-blue-800/50 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+            <div class="min-w-0">
+                <p class="text-xs text-sky-400 font-bold uppercase tracking-wider mb-1">Reproductor En Vivo • Canal 5 DNPlus TV:</p>
+                <h2 id="program-title" class="text-base sm:text-lg font-extrabold text-white truncate">Movie • Terror Profundo 3</h2>
+                <p id="program-desc" class="text-xs text-slate-400 mt-0.5">Señal directa en calidad ALTA • 24/7</p>
+            </div>
+
+            <a
+                href="https://wa.me/595992536184?text=Hola%20Canal%205%20DNPlus%20TV,%20los%20estoy%20viendo%20en%20vivo!"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-5 py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-md shrink-0"
+            >
+                <i class="fa-brands fa-whatsapp text-base"></i>
+                <span>WhatsApp En Vivo</span>
+            </a>
+        </div>
+
+        <!-- Navegación para espectadores: Señal 1, Eventos, Programación y Contactos al WhatsApp -->
+        <nav class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-900/90 border border-blue-800/50 p-2 rounded-2xl shadow-lg">
+            <button type="button" id="tab-senal1" onclick="switchViewerSection('senal1')" class="viewer-tab-btn bg-sky-600 text-white font-extrabold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md">
+                <i class="fa-solid fa-tower-broadcast"></i>
+                <span>Señal 1</span>
+            </button>
+            <button type="button" id="tab-eventos" onclick="switchViewerSection('eventos')" class="viewer-tab-btn bg-slate-950/80 hover:bg-slate-800 text-slate-300 font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer border border-slate-800">
+                <i class="fa-solid fa-calendar-star text-amber-400"></i>
+                <span>Eventos</span>
+            </button>
+            <button type="button" id="tab-programacion" onclick="switchViewerSection('programacion')" class="viewer-tab-btn bg-slate-950/80 hover:bg-slate-800 text-slate-300 font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer border border-slate-800">
+                <i class="fa-solid fa-film text-sky-400"></i>
+                <span>Programación</span>
+            </button>
+            <button type="button" id="tab-whatsapp" onclick="switchViewerSection('whatsapp')" class="viewer-tab-btn bg-slate-950/80 hover:bg-slate-800 text-slate-300 font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer border border-slate-800">
+                <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
+                <span>WhatsApp</span>
+            </button>
+        </nav>
+
+        <!-- SECCIÓN 1: SEÑAL 1 -->
+        <section id="section-senal1" class="viewer-section bg-slate-900/80 border border-blue-800/40 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-lg">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-signal"></i> Señal 1 • Transmisión Principal en Vivo
+                </h3>
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">EN DIRECTO</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Estás sintonizando la <strong>Señal 1 de Canal 5 DNPlus TV</strong> en formato televisivo continuo, sincronizada con lo que envíe el Panel Emisor.
+            </p>
+            <div class="flex flex-wrap gap-2.5 pt-1">
+                <button type="button" onclick="tuneSignalOne()" class="bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition cursor-pointer shadow">
+                    <i class="fa-solid fa-play"></i> Sintonizar Señal 1 Ahora
+                </button>
+                <button type="button" onclick="forceSyncSignal(true)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition cursor-pointer">
+                    <i class="fa-solid fa-rotate"></i> Actualizar Señal
+                </button>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: EVENTOS -->
+        <section id="section-eventos" class="viewer-section hidden bg-slate-900/80 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-lg">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-trophy"></i> Eventos en Vivo y Especiales
+                </h3>
+                <span id="viewer-events-count" class="text-[11px] font-mono text-slate-400">0 eventos</span>
+            </div>
+            <div id="viewer-events-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        </section>
+
+        <!-- SECCIÓN 3: PROGRAMACIÓN -->
+        <section id="section-programacion" class="viewer-section hidden bg-slate-900/80 border border-blue-800/40 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-lg">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-film"></i> Programación y Canales Cargados
+                </h3>
+                <span id="viewer-catalog-count" class="text-[11px] font-mono text-slate-400">0 títulos</span>
+            </div>
+            <div id="viewer-catalog-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        </section>
+
+        <!-- SECCIÓN 4: CONTACTOS AL WHATSAPP -->
+        <section id="section-whatsapp" class="viewer-section hidden bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-lg">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-base"></i> Contactos al WhatsApp • Canal 5 DNPlus
+                </h3>
+                <span class="text-[11px] font-bold text-emerald-400">Atención en Vivo</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                    href="https://wa.me/595992536184?text=Hola%20Canal%205%20DNPlus%20TV!%20Quiero%20enviar%20un%20saludo%20en%20vivo."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between gap-3 transition"
+                >
+                    <div>
+                        <p class="text-xs font-extrabold text-white">Cabina En Vivo • Saludos y Pedidos</p>
+                        <p class="text-[11px] text-emerald-300 mt-0.5">+595 992 536 184 • Mensaje Directo</p>
+                    </div>
+                    <i class="fa-brands fa-whatsapp text-2xl text-emerald-400"></i>
+                </a>
+                <a
+                    href="https://wa.me/595992536184?text=Hola%20Canal%205%20DNPlus%20TV!%20Quisiera%20informaci%C3%B3n%20sobre%20publicidad%20y%20eventos."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="bg-slate-950/90 hover:bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-3 transition"
+                >
+                    <div>
+                        <p class="text-xs font-extrabold text-white">Prensa, Eventos y Publicidad</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Cobertura y transmisiones especiales</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-sm text-sky-400"></i>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-slate-900/80 border-t border-blue-900/60 py-4 text-center text-xs text-slate-400">
+        &copy; 2026 Canal 5 DNPlus • Todos los derechos reservados.
+    </footer>
+
+    <script>
+        const viewerPlayer = document.getElementById('viewerPlayer');
+        const waitingOverlay = document.getElementById('waiting-overlay');
+        let hlsInstance = null;
+        let currentStreamUrl = '';
+        let lastSignalId = '';
+        let viewerCatalog = [];
+
+        const OFFICIAL_CHANNEL_CODE = 'DNPLUS-CANAL5-OFICIAL';
+        const memoryStore = {};
+        function safeGetStore(k) {
+            try { return window.localStorage.getItem(k); } catch (e) { return memoryStore[k] || null; }
+        }
+        function safeSetStore(k, v) {
+            memoryStore[k] = v;
+            try { window.localStorage.setItem(k, v); } catch (e) {}
+        }
+
+        const urlRoom = new URLSearchParams(window.location.search).get('room');
+        const channelCode = (urlRoom || safeGetStore('dnplus_room_code') || OFFICIAL_CHANNEL_CODE).trim().toUpperCase();
+        const MY_TOPIC = `dnplus/canal5/${channelCode}`;
+        const TOPICS = Array.from(new Set([
+            MY_TOPIC,
+            `dnplus/canal5/${OFFICIAL_CHANNEL_CODE}`,
+            'dnplus/canal5/live',
+            'canal5-dnplus-senal-vivo'
+        ]));
+        const MQTT_BROKERS = [
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://broker.hivemq.com:8884/mqtt',
+            'wss://test.mosquitto.org:8081/mqtt'
+        ];
+        let mqttClients = [];
+        let lastSignalTimestamp = 0;
+        let broadcastChannel = null;
+        try {
+            if (typeof BroadcastChannel !== 'undefined') {
+                broadcastChannel = new BroadcastChannel('dnplus_live_system');
+            }
+        } catch (err) {
+            broadcastChannel = null;
+        }
+
+        const DEFAULT_STREAMS = [
+            {
+                title: 'Movie • Terror Profundo 3',
+                category: 'programacion',
+                url: 'https://archive.org/download/terror-profundo-3-disneyclub-tv-hd-2/Terror%20Profundo%203%20disneyclubTv%20HD%282.mp4'
+            },
+            {
+                title: 'Evento • Transmisión Especial Canal 5',
+                category: 'eventos',
+                url: 'https://archive.org/download/DisneyClubTv_Stockholm/videoplayback.mp4'
+            },
+            {
+                title: 'Movie • Sex With The Stars (1981)',
+                category: 'programacion',
+                url: 'https://archive.org/download/sex.-with.-the.-stars.-1981.720p.-blu-ray.x-264.-aac-yts.-mx/Sex.With.The.Stars.1981.720p.BluRay.x264.AAC-%5BYTS.MX%5D.mp4'
+            },
+            {
+                title: 'Idiocracia (2006)',
+                category: 'programacion',
+                url: 'https://archive.org/download/idiocracia-2006-brrip-m-720p-x-264-ac-3-es/Idiocracia%20%282006%29%20%5BBRrip%20m720p%20x264%20AC3%28ES%29%5D.mp4'
+            }
+        ];
+
+        function updateMuteUi() {
+            const icon = document.getElementById('muteIcon');
+            if (!viewerPlayer || !icon) return;
+            if (viewerPlayer.muted) {
+                icon.className = 'fa-solid fa-volume-xmark text-[10px] text-white';
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-[10px] text-white';
+            }
+        }
+
+        function toggleMuteLive() {
+            if (!viewerPlayer) return;
+            viewerPlayer.muted = !viewerPlayer.muted;
+            if (!viewerPlayer.muted) {
+                viewerPlayer.play().catch(() => {});
+            }
+            updateMuteUi();
+        }
+
+        function switchViewerSection(sectionKey) {
+            const keys = ['senal1', 'eventos', 'programacion', 'whatsapp'];
+            keys.forEach((key) => {
+                const sectionEl = document.getElementById(`section-${key}`);
+                const tabEl = document.getElementById(`tab-${key}`);
+                const active = key === sectionKey;
+                if (sectionEl) sectionEl.classList.toggle('hidden', !active);
+                if (tabEl) {
+                    tabEl.className = active
+                        ? 'viewer-tab-btn bg-sky-600 text-white font-extrabold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md'
+                        : 'viewer-tab-btn bg-slate-950/80 hover:bg-slate-800 text-slate-300 font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer border border-slate-800';
+                }
+            });
+        }
+
+        function tuneSignalOne() {
+            const badge = document.getElementById('player-signal-badge');
+            if (badge) badge.textContent = 'DNPlus TV';
+            forceSyncSignal(true);
+        }
+
+        function renderViewerCatalog(items, activeUrl = '') {
+            const catalogList = document.getElementById('viewer-catalog-list');
+            const catalogCount = document.getElementById('viewer-catalog-count');
+            const eventsList = document.getElementById('viewer-events-list');
+            const eventsCount = document.getElementById('viewer-events-count');
+
+            const validItems = Array.isArray(items)
+                ? items.filter((it) => it && it.title && it.url)
+                : [];
+            const listData = validItems.length > 0 ? validItems : DEFAULT_STREAMS;
+            viewerCatalog = listData;
+
+            if (catalogCount) catalogCount.textContent = `${listData.length} títulos`;
+
+            if (catalogList) {
+                catalogList.innerHTML = '';
+                listData.forEach((item, idx) => {
+                    const isCurrent = item.url === activeUrl;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => selectProgramItem(item, idx);
+                    btn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 text-xs cursor-pointer ${
+                        isCurrent
+                            ? 'bg-sky-600/25 border-sky-400 text-white font-bold'
+                            : 'bg-slate-950/80 border-slate-800 text-slate-300 hover:border-sky-500/60 hover:bg-slate-900'
+                    }`;
+                    btn.innerHTML = `
+                        <div class="min-w-0">
+                            <p class="truncate">${item.title}</p>
+                            <p class="text-[10px] text-sky-300/80 font-semibold mt-0.5">${isCurrent ? '● Viendo en vivo ahora' : 'Tocar para ver en vivo'}</p>
+                        </div>
+                        <span class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${isCurrent ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-400'}">
+                            <i class="fa-solid ${isCurrent ? 'fa-tower-broadcast animate-pulse' : 'fa-play'} text-[10px]"></i>
+                        </span>
+                    `;
+                    catalogList.appendChild(btn);
+                });
+            }
+
+            const eventMatches = listData.filter(
+                (it) => it.category === 'eventos' || /evento|especial|vivo|partido|concierto/i.test(it.title)
+            );
+            const shownEvents = eventMatches.length > 0 ? eventMatches : listData.slice(0, 2);
+            if (eventsCount) eventsCount.textContent = `${shownEvents.length} eventos`;
+
+            if (eventsList) {
+                eventsList.innerHTML = '';
+                shownEvents.forEach((ev, idx) => {
+                    const isCurrent = ev.url === activeUrl;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => {
+                        const badge = document.getElementById('player-signal-badge');
+                        if (badge) badge.textContent = 'Evento En Vivo • DNPlus';
+                        selectProgramItem(ev, idx);
+                    };
+                    btn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 text-xs cursor-pointer ${
+                        isCurrent
+                            ? 'bg-amber-500/20 border-amber-400 text-white font-bold'
+                            : 'bg-slate-950/80 border-slate-800 text-slate-200 hover:border-amber-500/60 hover:bg-slate-900'
+                    }`;
+                    btn.innerHTML = `
+                        <div class="min-w-0">
+                            <p class="truncate">${ev.title}</p>
+                            <p class="text-[10px] text-amber-300 font-semibold mt-0.5">${isCurrent ? '● Transmitiendo Evento' : 'Tocar para ver Evento En Vivo'}</p>
+                        </div>
+                        <span class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${isCurrent ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-amber-400'}">
+                            <i class="fa-solid fa-star text-[10px]"></i>
+                        </span>
+                    `;
+                    eventsList.appendChild(btn);
+                });
+            }
+        }
+
+        function playStream(url, title, userInitiated = false) {
+            if (!url || !viewerPlayer) return;
+            currentStreamUrl = url;
+
+            if (!String(url).startsWith('blob:')) {
+                safeSetStore('dnplus_pinned_live_stream_v1', JSON.stringify({
+                    url,
+                    title: title || 'Canal 5 DNPlus • Señal en ALTA',
+                    savedAt: Date.now()
+                }));
+            }
+
+            if (waitingOverlay) {
+                waitingOverlay.style.display = 'none';
+                waitingOverlay.style.opacity = '0';
+            }
+
+            const titleEl = document.getElementById('program-title');
+            const descEl = document.getElementById('program-desc');
+            if (titleEl) titleEl.textContent = title || 'Canal 5 DNPlus • Señal en ALTA';
+            if (descEl) descEl.textContent = String(url).startsWith('blob:')
+                ? 'Emisión de galería sincronizada • Canal 5 DNPlus TV'
+                : 'Señal directa en calidad ALTA • 24/7';
+
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+
+            if (userInitiated) {
+                viewerPlayer.muted = false;
+            }
+            updateMuteUi();
+
+            const attemptPlay = () => {
+                viewerPlayer.play().catch(() => {
+                    viewerPlayer.muted = true;
+                    updateMuteUi();
+                    viewerPlayer.play().catch(() => {});
+                });
+            };
+
+            if (url.includes('.m3u8')) {
+                if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                    hlsInstance = new Hls();
+                    hlsInstance.loadSource(url);
+                    hlsInstance.attachMedia(viewerPlayer);
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, attemptPlay);
+                } else if (viewerPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+                    viewerPlayer.src = url;
+                    attemptPlay();
+                }
+            } else {
+                viewerPlayer.src = url;
+                viewerPlayer.load();
+                attemptPlay();
+            }
+
+            viewerPlayer.onended = () => {
+                const pinnedNow = (() => {
+                    try {
+                        const raw = safeGetStore('dnplus_pinned_live_stream_v1');
+                        return raw ? JSON.parse(raw) : null;
+                    } catch (e) {
+                        return null;
+                    }
+                })();
+                const loopUrl = (pinnedNow && pinnedNow.url) || currentStreamUrl;
+                const loopTitle = (pinnedNow && pinnedNow.title) || (document.getElementById('program-title')?.textContent) || 'Canal 5 DNPlus • 24/7';
+                if (loopUrl) {
+                    playStream(loopUrl, loopTitle, false);
+                }
+            };
+        }
+
+        function selectProgramItem(item, idx = 0) {
+            if (!item || !item.url) return;
+            playStream(item.url, item.title || `Canal ${idx + 1}`, true);
+            renderViewerCatalog(viewerCatalog, item.url);
+        }
+
+        function forceSyncSignal(userInitiated = false) {
+            const descEl = document.getElementById('program-desc');
+            if (userInitiated && descEl) {
+                descEl.textContent = 'Sincronizando señal y programación...';
+            }
+
+            let pinned = null;
+            try {
+                const rawPinned = safeGetStore('dnplus_pinned_live_stream_v1');
+                if (rawPinned) pinned = JSON.parse(rawPinned);
+
+                const rawPlaylist = safeGetStore('dnplus_live_playlist');
+                if (rawPlaylist) {
+                    renderViewerCatalog(JSON.parse(rawPlaylist), currentStreamUrl);
+                } else {
+                    renderViewerCatalog(DEFAULT_STREAMS, currentStreamUrl);
+                }
+
+                const rawSignal = safeGetStore('dnplus_live_signal');
+                if (rawSignal) handleIncomingSignal(JSON.parse(rawSignal));
+            } catch (err) {}
+
+            if (pinned && pinned.url && (!currentStreamUrl || userInitiated)) {
+                playStream(pinned.url, pinned.title, userInitiated);
+                renderViewerCatalog(viewerCatalog, pinned.url);
+            } else if (currentStreamUrl && !userInitiated) {
+                if (viewerPlayer && viewerPlayer.paused) {
+                    viewerPlayer.play().catch(() => {});
+                }
+            } else if (!currentStreamUrl || userInitiated) {
+                const first = (viewerCatalog && viewerCatalog[0]) || DEFAULT_STREAMS[0];
+                if (first && first.url) {
+                    playStream(first.url, first.title, userInitiated);
+                    renderViewerCatalog(viewerCatalog, first.url);
+                }
+            }
+
+            if (mqttClients.some((c) => c && c.connected)) {
+                mqttClients.forEach((c) => {
+                    if (c && c.connected) TOPICS.forEach((topic) => c.subscribe(topic, { qos: 1 }));
+                });
+            } else {
+                initViewerMqtt();
+            }
+        }
+
+        function handleIncomingSignal(rawData) {
+            try {
+                const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                if (!data || typeof data !== 'object') return;
+
+                if (Array.isArray(data.playlist)) {
+                    renderViewerCatalog(data.playlist, currentStreamUrl);
+                    const safeList = data.playlist.filter((c) => c && c.url && !String(c.url).startsWith('blob:'));
+                    safeSetStore('dnplus_live_playlist', JSON.stringify(safeList));
+                }
+
+                if (data.type === 'volume' && typeof data.volume === 'number' && viewerPlayer) {
+                    viewerPlayer.volume = Math.max(0, Math.min(1, data.volume));
+                    return;
+                }
+
+                const incomingTs = Number(data.timestamp || 0);
+                if (incomingTs && lastSignalTimestamp && incomingTs < lastSignalTimestamp) {
+                    return;
+                }
+                if (incomingTs) {
+                    lastSignalTimestamp = incomingTs;
+                }
+
+                if (data.signalId && data.signalId === lastSignalId && data.url === currentStreamUrl) {
+                    return;
+                }
+                if (data.signalId) {
+                    lastSignalId = data.signalId;
+                }
+
+                if (data.type === 'url' && data.url) {
+                    const nextTitle = data.title || 'Canal 5 DNPlus • Señal en ALTA';
+                    if (data.pinned && !String(data.url).startsWith('blob:')) {
+                        safeSetStore('dnplus_pinned_live_stream_v1', JSON.stringify({
+                            url: data.url,
+                            title: nextTitle,
+                            savedAt: incomingTs || Date.now()
+                        }));
+                    }
+                    if (data.url !== currentStreamUrl) {
+                        playStream(data.url, nextTitle, false);
+                    } else {
+                        const titleEl = document.getElementById('program-title');
+                        if (titleEl) titleEl.textContent = nextTitle;
+                    }
+                    renderViewerCatalog(viewerCatalog, data.url);
+                }
+            } catch (err) {}
+        }
+
+        function initViewerMqtt() {
+            if (typeof mqtt === 'undefined') return;
+            mqttClients.forEach((c) => { try { c.end(true); } catch (err) {} });
+            mqttClients = [];
+
+            MQTT_BROKERS.forEach((brokerUrl, idx) => {
+                try {
+                    const client = mqtt.connect(brokerUrl, {
+                        clientId: `dnplus_viewer_${idx}_${Math.random().toString(16).slice(2, 8)}`,
+                        reconnectPeriod: 3000,
+                        connectTimeout: 6000
+                    });
+
+                    client.on('connect', () => {
+                        TOPICS.forEach((topic) => client.subscribe(topic, { qos: 1 }));
+                        const descEl = document.getElementById('program-desc');
+                        if (descEl) descEl.textContent = 'Vinculado en vivo con Panel Emisor • Calidad ALTA';
+                    });
+
+                    client.on('message', (topic, message) => {
+                        if (TOPICS.includes(topic)) {
+                            handleIncomingSignal(message.toString());
+                        }
+                    });
+
+                    client.on('error', () => {});
+                    mqttClients.push(client);
+                } catch (err) {}
+            });
+        }
+
+        if (broadcastChannel) {
+            broadcastChannel.onmessage = (event) => handleIncomingSignal(event.data);
+        }
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'dnplus_live_signal' && event.newValue) {
+                handleIncomingSignal(event.newValue);
+            } else if (event.key === 'dnplus_live_playlist' && event.newValue) {
+                try {
+                    renderViewerCatalog(JSON.parse(event.newValue), currentStreamUrl);
+                } catch (err) {}
+            } else if (event.key === 'dnplus_pinned_live_stream_v1' && event.newValue) {
+                try {
+                    const pinned = JSON.parse(event.newValue);
+                    if (pinned && pinned.url) playStream(pinned.url, pinned.title, false);
+                } catch (err) {}
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            switchViewerSection('senal1');
+            renderViewerCatalog(DEFAULT_STREAMS, '');
+            updateMuteUi();
+            forceSyncSignal(false);
+        });
+    </script>
+</body>
+</html>
