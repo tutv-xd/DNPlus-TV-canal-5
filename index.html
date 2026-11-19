@@ -1,9 +1,13 @@
+ ```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canal 5 DNPlus • Espectadores</title>
+    <!-- Ícono de la app (DNPlus TV) -->
+    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fuente Inter -->
@@ -26,11 +30,11 @@
     <header class="bg-blue-950/95 backdrop-blur-md border-b border-blue-900/60 sticky top-0 z-40 w-full shadow-lg">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 min-h-16 py-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 overflow-hidden flex items-center justify-center p-1 shadow-md shrink-0">
+                <div class="w-11 h-11 rounded-2xl bg-white border border-white/20 overflow-hidden flex items-center justify-center p-1 shadow-md shrink-0">
                     <img
                         src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg"
-                        alt="Logo Canal 5 DNPlus"
-                        onerror="this.onerror=null;this.src='https://placehold.co/80x80/0f172a/38bdf8?text=DN5';"
+                        alt="Ícono DNPlus TV"
+                        onerror="this.onerror=null;this.src='https://placehold.co/80x80/0f172a/ef4444?text=DNPlus+TV';"
                         class="w-full h-full object-contain rounded-xl"
                     >
                 </div>
@@ -66,7 +70,7 @@
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-blue-500/30 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col items-center justify-center">
             <!-- Marca superior de señal pequeña y discreta en esquina -->
             <div class="absolute top-2 left-2 z-20 bg-slate-950/75 backdrop-blur-sm px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1 pointer-events-none">
-                <img src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg" alt="DNPlus TV" class="w-3 h-3 rounded-sm object-contain bg-white/10 p-0.5 shrink-0">
+                <img src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg" alt="DNPlus TV" class="w-3.5 h-3.5 rounded-sm object-contain bg-white p-0.5 shrink-0">
                 <span id="player-signal-badge" class="text-[8px] font-bold tracking-tight text-white/90 uppercase leading-none">DNPlus TV</span>
                 <span class="text-[7px] font-extrabold px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-400 leading-none">ALTA</span>
             </div>
@@ -85,8 +89,8 @@
 
             <!-- Pantalla de sintonía inicial -->
             <div id="waiting-overlay" class="absolute inset-0 z-10 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300">
-                <div class="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4 animate-pulse">
-                    <i class="fa-solid fa-satellite-dish text-2xl text-sky-400"></i>
+                <div class="w-16 h-16 rounded-2xl bg-white p-1.5 border border-blue-500/30 flex items-center justify-center mb-4 shadow-lg">
+                    <img src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg" alt="DNPlus TV" class="w-full h-full object-contain rounded-xl">
                 </div>
                 <h2 class="text-base sm:text-lg font-extrabold text-white">Sintonizando Señal 1 • Canal 5 DNPlus TV...</h2>
                 <p class="text-xs text-slate-400 max-w-sm mt-1">
@@ -641,3 +645,4 @@
     </script>
 </body>
 </html>
+```
