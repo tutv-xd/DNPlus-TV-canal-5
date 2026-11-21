@@ -755,9 +755,9 @@
                         icon: isHlsStream(incomingUrl) ? 'fa-broadcast-tower' : 'fa-tv',
                         color: 'from-red-600 to-rose-700'
                     };
-                    // Borrar canales anteriores al emitir un nuevo canal individual desde el panel
-                    channels = [newItem];
-                    idx = 0;
+                    // Agregar el canal nuevo manteniendo los anteriores ya agregados desde el panel
+                    channels.push(newItem);
+                    idx = channels.length - 1;
                     listUpdated = true;
                     saveViewerChannels();
                     renderLists();
