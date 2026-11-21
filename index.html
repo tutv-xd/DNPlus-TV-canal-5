@@ -201,60 +201,27 @@
                 </div>
             </div>
 
-            <!-- Filtros rápidos por categoría -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
-                <button type="button" onclick="setChannelFilter('todos')" id="filter-todos" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white text-[11px] font-extrabold shrink-0 cursor-pointer transition">Todos</button>
-                <button type="button" onclick="setChannelFilter('mx')" id="filter-mx" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-bold shrink-0 cursor-pointer transition">MX</button>
-                <button type="button" onclick="setChannelFilter('paraguay')" id="filter-paraguay" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-bold shrink-0 cursor-pointer transition">Paraguay</button>
-                <button type="button" onclick="setChannelFilter('deportes')" id="filter-deportes" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-bold shrink-0 cursor-pointer transition">Deportes</button>
-                <button type="button" onclick="setChannelFilter('argentina')" id="filter-argentina" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-bold shrink-0 cursor-pointer transition">Argentina</button>
-                <button type="button" onclick="setChannelFilter('otros')" id="filter-otros" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-bold shrink-0 cursor-pointer transition">Otros países</button>
+            <!-- Solo 2 Categorías: TV EN VIVO y PELÍCULAS Y SERIES -->
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="setChannelFilter('tv')" id="filter-tv" class="py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow">
+                    <i class="fa-solid fa-tv"></i>
+                    <span>TV EN VIVO</span>
+                </button>
+                <button type="button" onclick="setChannelFilter('peliculas')" id="filter-peliculas" class="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition">
+                    <i class="fa-solid fa-film"></i>
+                    <span>PELÍCULAS Y SERIES</span>
+                </button>
             </div>
 
             <div id="viewerChannelIconsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-1"></div>
         </section>
 
-        <!-- Pestañas de Navegación -->
-        <section class="flex flex-col gap-3">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#0a1329] border border-blue-900/70 p-1.5 rounded-2xl">
-                <button type="button" id="tab-senal1" onclick="switchTab('senal1')" class="bg-sky-600 text-white font-extrabold py-2 px-2 rounded-xl text-xs cursor-pointer transition">
-                    Señal 1
-                </button>
-                <button type="button" id="tab-eventos" onclick="switchTab('eventos')" class="bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-2 px-2 rounded-xl text-xs cursor-pointer transition">
-                    Eventos
-                </button>
-                <button type="button" id="tab-programacion" onclick="switchTab('programacion')" class="bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-2 px-2 rounded-xl text-xs cursor-pointer transition">
-                    Programación
-                </button>
-                <button type="button" id="tab-whatsapp" onclick="switchTab('whatsapp')" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold py-2 px-2 rounded-xl text-xs cursor-pointer transition">
-                    WhatsApp
-                </button>
-            </div>
-
-            <div id="panel-senal1" class="tab-panel bg-[#0a1329] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-                <p class="text-xs text-slate-300">Señal principal continua 24/7 con salto automático si algún enlace falla.</p>
-                <button type="button" onclick="watch247WithSound()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs shrink-0 cursor-pointer">
-                    Sintonizar
-                </button>
-            </div>
-
-            <div id="panel-eventos" class="tab-panel hidden bg-[#0a1329] border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
-                <div id="viewer-events-list" class="flex flex-col gap-1.5"></div>
-            </div>
-
-            <div id="panel-programacion" class="tab-panel hidden bg-[#0a1329] border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
-                <div id="viewer-catalog-list" class="flex flex-col gap-1.5 max-h-56 overflow-y-auto"></div>
-            </div>
-
-            <div id="panel-whatsapp" class="tab-panel hidden bg-[#0a1329] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-xs font-extrabold text-white">Cabina Canal 5 DNPlus TV</p>
-                    <p class="text-[11px] text-emerald-400">+595 992 536 184</p>
-                </div>
-                <a href="https://wa.me/595992536184" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs">
-                    Escribir
-                </a>
-            </div>
+        <!-- Barra de Acción Rápida -->
+        <section class="bg-[#0a1329] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+            <p class="text-xs text-slate-300">Toca cualquier ícono de <strong>TV en Vivo</strong> o <strong>Películas y Series</strong> para ver en pantalla.</p>
+            <button type="button" onclick="watch247WithSound()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shrink-0 cursor-pointer">
+                Activar Audio
+            </button>
         </section>
 
     </main>
@@ -283,7 +250,7 @@
         let clearedAtTimestamp = 0;
         let channels = [...DEFAULT_CHANNELS];
         let currentIdx = 0;
-        let currentFilter = 'todos';
+        let currentFilter = 'tv';
         let currentStreamUrl = '';
         let hlsInstance = null;
         let skipTimeout = null;
@@ -380,35 +347,24 @@
         }
 
         function setChannelFilter(filterName) {
-            currentFilter = filterName;
-            ['todos', 'mx', 'paraguay', 'deportes', 'argentina', 'otros'].forEach((name) => {
+            currentFilter = filterName === 'peliculas' ? 'peliculas' : 'tv';
+            ['tv', 'peliculas'].forEach((name) => {
                 const btn = document.getElementById(`filter-${name}`);
                 if (!btn) return;
-                btn.className = name === filterName
-                    ? 'px-2.5 py-1 rounded-lg bg-sky-600 text-white text-[11px] font-extrabold shrink-0 cursor-pointer transition'
-                    : 'px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-bold shrink-0 cursor-pointer transition';
+                btn.className = name === currentFilter
+                    ? (name === 'peliculas'
+                        ? 'py-2 px-3 rounded-xl bg-violet-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow'
+                        : 'py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow')
+                    : 'py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition';
             });
             renderLists();
         }
 
-        function classifyChannelGroup(item) {
-            if (item && item.group && ['mx', 'paraguay', 'deportes', 'argentina', 'otros'].includes(item.group)) {
-                return item.group;
-            }
-            const combined = `${item?.title || ''} ${item?.url || ''}`.toLowerCase();
-            if (/deport|sport|futbol|soccer|liga|barca|cnar|esp[oó]n|tyc|fox\s*sport/i.test(combined)) {
-                return 'deportes';
-            }
-            if (/\b(mx|mexico|méxico|televisa|azteca|las[\s-]*estrellas|guadalajara)\b/i.test(combined)) {
-                return 'mx';
-            }
-            if (/\b(paraguay|py|telefuturo|snt|rpc|latele|canal\s*9|canal\s*13)\b/i.test(combined)) {
-                return 'paraguay';
-            }
-            if (/\b(argentina|ar|tn\b|canal\s*26|telefe|eltrece|el\s*trece|c5n)\b/i.test(combined)) {
-                return 'argentina';
-            }
-            return 'otros';
+        function classifyChannelCategory(item) {
+            if (item && item.category === 'peliculas') return 'peliculas';
+            if (item && item.category === 'tv') return 'tv';
+            const url = String(item?.url || '').trim();
+            return /\.(mp4|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
         }
 
         function isHlsStream(url) {
@@ -586,30 +542,31 @@
         }
 
         function renderLists() {
-            const catList = document.getElementById('viewer-catalog-list');
-            const evList = document.getElementById('viewer-events-list');
             const iconsGrid = document.getElementById('viewerChannelIconsGrid');
             const quickCount = document.getElementById('quickChannelsCount');
 
             const filteredEntries = channels
                 .map((ch, idx) => ({ ch, idx }))
-                .filter(({ ch }) => {
-                    if (currentFilter === 'todos') return true;
-                    return classifyChannelGroup(ch) === currentFilter;
-                });
+                .filter(({ ch }) => classifyChannelCategory(ch) === currentFilter);
 
-            if (quickCount) quickCount.textContent = `${filteredEntries.length} canales`;
+            if (quickCount) {
+                quickCount.textContent = currentFilter === 'peliculas'
+                    ? `${filteredEntries.length} títulos`
+                    : `${filteredEntries.length} canales`;
+            }
 
             if (iconsGrid) {
                 iconsGrid.innerHTML = '';
-                const slotCount = Math.max(filteredEntries.length, 8);
+                const slotCount = Math.max(filteredEntries.length, 6);
                 for (let s = 0; s < slotCount; s++) {
                     const entry = filteredEntries[s];
                     if (entry) {
                         const { ch, idx } = entry;
                         const isPlaying = idx === currentIdx && ch.url === currentStreamUrl;
-                        const grad = ch.color || (isDirectMediaUrl(ch.url) ? 'from-violet-600 to-indigo-800' : 'from-sky-500 to-blue-700');
-                        const iconName = ch.icon || (isHlsStream(ch.url) ? 'fa-broadcast-tower' : (isDirectMediaUrl(ch.url) ? 'fa-film' : 'fa-tv'));
+                        const cat = classifyChannelCategory(ch);
+                        const isMovie = cat === 'peliculas';
+                        const grad = isMovie ? 'from-violet-600 to-indigo-800' : 'from-sky-500 to-blue-700';
+                        const iconName = isMovie ? 'fa-film' : 'fa-tv';
                         const cardBtn = document.createElement('button');
                         cardBtn.type = 'button';
                         cardBtn.onclick = () => playChannelAt(idx, true);
@@ -621,61 +578,31 @@
                         cardBtn.innerHTML = `
                             <span class="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${grad} text-white shadow-md">
                                 <i class="fa-solid ${iconName} text-sm"></i>
-                                ${ch.badge ? `<span class="absolute -bottom-1 -right-1 px-1 rounded bg-slate-950/90 border border-white/15 text-[8px] font-black text-white leading-tight">${ch.badge}</span>` : ''}
                             </span>
                             <div class="min-w-0 flex-1">
                                 <p class="text-[11px] font-extrabold truncate">${ch.title}</p>
                                 <p class="text-[9px] uppercase tracking-wider mt-0.5 ${
-                                    isPlaying ? 'text-emerald-400 font-black' : 'text-slate-400'
-                                }">${isPlaying ? '● EN VIVO' : (isHlsStream(ch.url) ? 'M3U8 LIVE' : (isDirectMediaUrl(ch.url) ? 'PELÍCULA' : 'TV EN VIVO'))}</p>
+                                    isPlaying ? 'text-emerald-400 font-black' : (isMovie ? 'text-violet-400' : 'text-sky-400')
+                                }">${isPlaying ? '● VIENDO AHORA' : (isMovie ? 'PELÍCULAS Y SERIES' : 'TV EN VIVO')}</p>
                             </div>
                         `;
                         iconsGrid.appendChild(cardBtn);
                     } else {
+                        const isMovieSlot = currentFilter === 'peliculas';
                         const emptySlot = document.createElement('div');
                         emptySlot.className = 'p-2.5 rounded-2xl border border-dashed border-slate-800/90 bg-slate-950/50 flex items-center gap-2.5 min-w-0';
                         emptySlot.innerHTML = `
                             <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-slate-900 border border-slate-800 text-slate-600">
-                                <i class="fa-solid fa-tv text-sm"></i>
+                                <i class="fa-solid ${isMovieSlot ? 'fa-film' : 'fa-tv'} text-sm"></i>
                             </span>
                             <div class="min-w-0 flex-1">
-                                <p class="text-[11px] font-bold text-slate-600 truncate">Canal libre</p>
+                                <p class="text-[11px] font-bold text-slate-600 truncate">${isMovieSlot ? 'Película / Serie' : 'Canal libre'}</p>
                                 <p class="text-[9px] text-slate-700 truncate">Desde panel</p>
                             </div>
                         `;
                         iconsGrid.appendChild(emptySlot);
                     }
                 }
-            }
-
-            if (catList) {
-                catList.innerHTML = '';
-                channels.forEach((ch, idx) => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.onclick = () => playChannelAt(idx, true);
-                    btn.className = 'w-full text-left px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-200 flex items-center justify-between gap-2 cursor-pointer';
-                    btn.innerHTML = `
-                        <span class="truncate font-semibold">${ch.title}</span>
-                        <span class="text-[10px] text-sky-400 font-bold shrink-0">Ver</span>
-                    `;
-                    catList.appendChild(btn);
-                });
-            }
-
-            if (evList) {
-                evList.innerHTML = '';
-                const eventChannels = channels.filter((c) => c.category === 'eventos' || c.group === 'deportes');
-                const items = eventChannels.length ? eventChannels : channels.slice(0, 3);
-                items.forEach((ev) => {
-                    const idx = channels.findIndex((c) => c.url === ev.url);
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.onclick = () => playChannelAt(idx >= 0 ? idx : 0, true);
-                    btn.className = 'w-full text-left px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs text-amber-200 font-bold truncate cursor-pointer';
-                    btn.textContent = ev.title;
-                    evList.appendChild(btn);
-                });
             }
         }
 
@@ -719,19 +646,15 @@
                 const replaced = payload.playlist
                     .filter((item) => item && item.url)
                     .map((item) => {
-                        const detectedGroup = classifyChannelGroup(item);
+                        const cat = classifyChannelCategory(item);
                         return {
-                            title: item.title || 'Canal IPTV',
+                            title: item.title || 'Canal 5',
                             url: item.url,
-                            category: item.category || (detectedGroup === 'deportes' ? 'eventos' : 'programacion'),
-                            group: detectedGroup,
-                            badge: item.badge || (isHlsStream(item.url) ? 'M3U8' : detectedGroup.toUpperCase()),
-                            icon: item.icon || (isHlsStream(item.url) ? 'fa-broadcast-tower' : 'fa-tv'),
-                            color: item.color || 'from-emerald-600 to-teal-800'
+                            category: cat
                         };
                     });
-                const prevSignature = channels.map((c) => `${c.title}|${c.url}`).join(';;');
-                const nextSignature = replaced.map((c) => `${c.title}|${c.url}`).join(';;');
+                const prevSignature = channels.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
+                const nextSignature = replaced.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
                 if (replaced.length > 0 && prevSignature !== nextSignature) {
                     channels = replaced;
                     const keptIdx = currentStreamUrl ? channels.findIndex((c) => c.url === currentStreamUrl) : -1;
@@ -739,24 +662,18 @@
                     listUpdated = true;
                     saveViewerChannels();
                     renderLists();
-                    showTemporaryNotice(`Lista actualizada desde el panel (${replaced.length} canales)`, 2400);
                 }
             }
 
             if (incomingUrl) {
                 let idx = channels.findIndex((c) => c.url === incomingUrl);
                 if (idx < 0) {
-                    const newItem = {
-                        title: incomingTitle || 'Señal en Vivo • Canal 5',
+                    const cat = classifyChannelCategory({ title: incomingTitle, url: incomingUrl, category: payload.category });
+                    channels.push({
+                        title: incomingTitle || 'Canal 5 DNPlus TV',
                         url: incomingUrl,
-                        category: 'programacion',
-                        group: classifyChannelGroup({ title: incomingTitle, url: incomingUrl }),
-                        badge: isHlsStream(incomingUrl) ? 'M3U8' : 'VIVO',
-                        icon: isHlsStream(incomingUrl) ? 'fa-broadcast-tower' : 'fa-tv',
-                        color: 'from-red-600 to-rose-700'
-                    };
-                    // Agregar el canal nuevo manteniendo los anteriores ya agregados desde el panel
-                    channels.push(newItem);
+                        category: cat
+                    });
                     idx = channels.length - 1;
                     listUpdated = true;
                     saveViewerChannels();
@@ -767,15 +684,13 @@
                     renderLists();
                 }
 
-                // No reiniciar ni cortar el video si ya se está reproduciendo la misma URL
-                const isAlreadyPlayingSameUrl = incomingUrl === currentStreamUrl && (hlsInstance || (videoEl && !videoEl.paused));
-                if (!isAlreadyPlayingSameUrl) {
-                    const shouldUnmute = Boolean(payload.playing);
-                    playChannelAt(idx, shouldUnmute);
+                // Nunca interrumpir ni cambiar el canal que el espectador está viendo; solo iniciar si no había nada reproduciéndose
+                if (!currentStreamUrl && channels.length > 0) {
+                    playChannelAt(idx, false);
                 }
                 const syncEl = document.getElementById('syncStatusText');
                 if (syncEl) {
-                    syncEl.textContent = `Señal sincronizada • ${incomingTitle || 'Canal 5'}`;
+                    syncEl.textContent = `Lista sincronizada • ${channels.length} disponibles`;
                     syncEl.className = 'text-[11px] text-emerald-400 font-semibold truncate';
                 }
             } else if (listUpdated && channels.length > 0 && !currentStreamUrl) {
