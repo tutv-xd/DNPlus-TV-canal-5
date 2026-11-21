@@ -266,6 +266,7 @@
 
     <script>
         const DEFAULT_CHANNELS = [];
+        const VIEWER_STORAGE_KEY = 'dnplus_viewer_saved_channels_v1';
 
         const MQTT_BROKERS = [
             'wss://broker.emqx.io:8084/mqtt',
@@ -448,11 +449,6 @@
                     updateFullscreenUi();
                     return;
                 }
-                if (monitorEl && monitorEl.webkitRequestFullscreen) {
-                    monitorEl.webkitRequestFullscreen();
-                    updateFullscreenUi();
-                    return;
-                }
             } catch (e) {}
 
             isCssFull = true;
@@ -461,37 +457,36 @@
             updateFullscreenUi();
         }
 
-        ['fullscreenchange', 'webkitfullscreenchange'].forEach((evt) => {
-            document.addEventListener(evt, () => {
-                if (!document.fullscreenElement && !document.webkitFullscreenElement && isCssFull) {
-                    isCssFull = false;
-                    monitorEl?.classList.remove('tv-expanded-fs');
-                    document.body.style.overflow = '';
-                }
-                updateFullscreenUi();
-            });
-        });
-
-        function switchTab(tabName) {
-            ['senal1', 'eventos', 'programacion', 'whatsapp'].forEach((name) => {
-                document.getElementById(`panel-${name}`)?.classList.toggle('hidden', name !== tabName);
-                const btn = document.getElementById(`tab-${name}`);
-                if (!btn) return;
-                if (name === tabName) {
-                    btn.className = 'bg-sky-600 text-white font-extrabold py-2 px-2 rounded-xl text-xs cursor-pointer transition';
-                } else {
-                    btn.className = name === 'whatsapp'
-                        ? 'bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold py-2 px-2 rounded-xl text-xs cursor-pointer transition'
-                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-2 px-2 rounded-xl text-xs cursor-pointer transition';
-                }
-            });
-        }
-
         function clearTimers() {
             clearTimeout(skipTimeout);
             clearTimeout(audioCheckTimeout);
             skipTimeout = null;
             audioCheckTimeout = null;
+        }
+
+        function saveViewerChannels() {
+            try {
+                localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify({
+                    channels: channels.slice(0, 150),
+                    activeUrl: currentStreamUrl || (channels[currentIdx]?.url || ''),
+                    savedAt: Date.now()
+                }));
+            } catch (e) {}
+        }
+
+        function loadViewerChannels() {
+            try {
+                const raw = localStorage.getItem(VIEWER_STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
+                    channels = parsed.channels;
+                    if (parsed.activeUrl) {
+                        const found = channels.findIndex((c) => c.url === parsed.activeUrl);
+                        if (found >= 0) currentIdx = found;
+                    }
+                }
+            } catch (e) {}
         }
 
         function playChannelAt(index, userInitiated = false) {
@@ -502,6 +497,7 @@
             currentIdx = ((index % channels.length) + channels.length) % channels.length;
             const ch = channels[currentIdx];
             currentStreamUrl = ch.url;
+            saveViewerChannels();
 
             const titleEl = document.getElementById('currentChannelTitle');
             const counterEl = document.getElementById('channelCounterText');
@@ -531,12 +527,34 @@
 
                 if (isHlsStream(ch.url) || !/\.(mp4|webm|ogg|m4v)(\?|$)/i.test(ch.url)) {
                     if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+                        // Buffer amplio y recuperación automática sin cortes (sin lowLatencyMode agresivo)
+                        hlsInstance = new Hls({
+                            enableWorker: true,
+                            lowLatencyMode: false,
+                            maxBufferLength: 30,
+                            maxMaxBufferLength: 60,
+                            backBufferLength: 30,
+                            liveSyncDurationCount: 3,
+                            liveMaxLatencyDurationCount: 10,
+                            manifestLoadingMaxRetry: 6,
+                            levelLoadingMaxRetry: 6,
+                            fragLoadingMaxRetry: 8,
+                            fragLoadingRetryDelay: 1000
+                        });
                         hlsInstance.loadSource(ch.url);
                         hlsInstance.attachMedia(videoEl);
                         hlsInstance.on(Hls.Events.MANIFEST_PARSED, startPlayback);
                         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
-                            if (data && data.fatal) {
+                            if (!data) return;
+                            if (data.fatal) {
+                                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                                    hlsInstance.startLoad();
+                                    return;
+                                }
+                                if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                                    hlsInstance.recoverMediaError();
+                                    return;
+                                }
                                 if (hlsInstance) {
                                     hlsInstance.destroy();
                                     hlsInstance = null;
@@ -670,6 +688,7 @@
                 currentIdx = 0;
                 currentStreamUrl = '';
                 try {
+                    localStorage.removeItem(VIEWER_STORAGE_KEY);
                     localStorage.removeItem('dnplus_live_signal');
                     localStorage.removeItem('dnplus_live_playlist');
                 } catch (e) {}
@@ -697,7 +716,6 @@
             let listUpdated = false;
 
             if (Array.isArray(payload.playlist) && payload.playlist.length > 0) {
-                // Reemplazar los canales anteriores por la nueva lista enviada desde el panel
                 const replaced = payload.playlist
                     .filter((item) => item && item.url)
                     .map((item) => {
@@ -712,10 +730,14 @@
                             color: item.color || 'from-emerald-600 to-teal-800'
                         };
                     });
-                if (replaced.length > 0) {
+                const prevSignature = channels.map((c) => `${c.title}|${c.url}`).join(';;');
+                const nextSignature = replaced.map((c) => `${c.title}|${c.url}`).join(';;');
+                if (replaced.length > 0 && prevSignature !== nextSignature) {
                     channels = replaced;
-                    currentIdx = 0;
+                    const keptIdx = currentStreamUrl ? channels.findIndex((c) => c.url === currentStreamUrl) : -1;
+                    currentIdx = keptIdx >= 0 ? keptIdx : 0;
                     listUpdated = true;
+                    saveViewerChannels();
                     renderLists();
                     showTemporaryNotice(`Lista actualizada desde el panel (${replaced.length} canales)`, 2400);
                 }
@@ -737,13 +759,17 @@
                     channels = [newItem];
                     idx = 0;
                     listUpdated = true;
+                    saveViewerChannels();
                     renderLists();
                 } else if (incomingTitle && channels[idx].title !== incomingTitle) {
                     channels[idx].title = incomingTitle;
+                    saveViewerChannels();
                     renderLists();
                 }
 
-                if (incomingUrl !== currentStreamUrl || listUpdated) {
+                // No reiniciar ni cortar el video si ya se está reproduciendo la misma URL
+                const isAlreadyPlayingSameUrl = incomingUrl === currentStreamUrl && (hlsInstance || (videoEl && !videoEl.paused));
+                if (!isAlreadyPlayingSameUrl) {
                     const shouldUnmute = Boolean(payload.playing);
                     playChannelAt(idx, shouldUnmute);
                 }
@@ -752,7 +778,7 @@
                     syncEl.textContent = `Señal sincronizada • ${incomingTitle || 'Canal 5'}`;
                     syncEl.className = 'text-[11px] text-emerald-400 font-semibold truncate';
                 }
-            } else if (listUpdated && channels.length > 0) {
+            } else if (listUpdated && channels.length > 0 && !currentStreamUrl) {
                 playChannelAt(0, false);
             }
         }
@@ -868,9 +894,10 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            loadViewerChannels();
             renderLists();
             if (channels.length > 0) {
-                playChannelAt(0, false);
+                playChannelAt(currentIdx, false);
             }
             initMqttSync();
             try {
