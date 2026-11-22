@@ -20,7 +20,13 @@
             background-color: #030712;
             color: #f8fafc;
         }
-        /* Pantalla completa expandida de respaldo para navegadores o vistas embebidas */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
         #tvMonitorBox.tv-expanded-fs {
             position: fixed !important;
             inset: 0 !important;
@@ -79,11 +85,10 @@
     </header>
 
     <!-- Contenido Principal -->
-    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-4 flex flex-col gap-4">
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-3 flex flex-col gap-3">
 
-        <!-- Monitor TV -->
-        <section id="tvMonitorBox" class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-sky-500/35 shadow-2xl flex items-center justify-center">
-            <!-- Badges superiores -->
+        <!-- Monitor TV Estático (Fijo arriba al deslizar canales) -->
+        <section id="tvMonitorBox" class="sticky top-[57px] z-20 relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-sky-500/40 shadow-[0_14px_35px_rgba(0,0,0,0.9)] flex items-center justify-center">
             <div class="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 bg-slate-950/85 px-2.5 py-1 rounded-xl border border-white/10 pointer-events-none">
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                 <span class="text-[11px] font-black text-white uppercase">DNPLUS TV</span>
@@ -91,12 +96,10 @@
                 <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">SEÑAL 1</span>
             </div>
 
-            <!-- Estado de carga o salto -->
             <div id="statusOverlay" class="hidden absolute inset-x-4 top-14 z-30 bg-slate-950/90 border border-sky-500/40 text-sky-200 px-3.5 py-2 rounded-2xl text-xs font-bold text-center shadow-lg">
-                <span id="statusOverlayText">Sintonizando Canal 5 DNPlus TV...</span>
+                <span id="statusOverlayText">Sincronizando señal...</span>
             </div>
 
-            <!-- Video -->
             <video
                 id="viewerVideo"
                 class="w-full h-full object-contain bg-black"
@@ -105,7 +108,6 @@
                 controlsList="nodownload noplaybackrate"
             ></video>
 
-            <!-- Botón de aviso para activar sonido si el navegador lo bloquea -->
             <button
                 type="button"
                 id="btnTapForAudio"
@@ -116,7 +118,6 @@
                 <span>Toca para activar audio</span>
             </button>
 
-            <!-- Controles flotantes: Audio y Pantalla Completa TV -->
             <div class="absolute bottom-3 right-3 z-20 flex items-center gap-2">
                 <button
                     type="button"
@@ -141,15 +142,15 @@
             </div>
         </section>
 
-        <!-- Barra de Canal Actual y Controles Rápidos -->
+        <!-- Barra de Canal Actual -->
         <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
             <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-0.5">
                     <span class="px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-black uppercase">EN VIVO 24/7</span>
-                    <span id="channelCounterText" class="text-[11px] font-mono text-slate-400">1 / 4</span>
+                    <span id="channelCounterText" class="text-[11px] font-mono text-slate-400">0 / 0</span>
                 </div>
                 <h2 id="currentChannelTitle" class="text-sm sm:text-base font-black text-white truncate">
-                    Evento • Transmisión Especial Canal 5
+                    Esperando señal del canal...
                 </h2>
             </div>
 
@@ -165,43 +166,32 @@
                 </button>
                 <button
                     type="button"
-                    onclick="watch247WithSound()"
+                    onclick="enableAudioNow()"
                     class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
                 >
-                    <i class="fa-solid fa-play"></i>
-                    <span>Ver 24/7</span>
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span>Audio</span>
                 </button>
                 <button
                     type="button"
                     onclick="playNextChannel(true)"
-                    class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
-                >
-                    <i class="fa-solid fa-forward-step"></i>
-                    <span>Siguiente Canal</span>
-                </button>
-            </div>
-        </section>
-
-        <!-- Barra de Canales con Ícono para Espectadores -->
+        <!-- Íconos de Canales Deslizables (Solo TV EN VIVO y PELÍCULAS Y SERIES) -->
         <section id="viewerChannelsBar" class="bg-[#0a1329] border border-blue-800/60 rounded-2xl p-3.5 flex flex-col gap-2.5 shadow-lg">
             <div class="flex items-center justify-between gap-2">
                 <span class="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-tv"></i> Canales Disponibles • Toca un ícono para ver
+                    <i class="fa-solid fa-tv"></i> Desliza y toca un canal
                 </span>
-                <div class="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onclick="refreshChannelsFromPanel()"
-                        class="px-2 py-1 rounded-lg bg-sky-600/20 hover:bg-sky-600 border border-sky-500/40 text-sky-300 hover:text-white text-[10px] font-extrabold flex items-center gap-1 cursor-pointer transition"
-                    >
-                        <i class="fa-solid fa-rotate"></i>
-                        <span>Actualizar</span>
+                <div class="flex items-center gap-1.5">
+                    <span id="quickChannelsCount" class="text-[11px] font-mono text-slate-400 mr-1">0 canales</span>
+                    <button type="button" onclick="scrollChannelsStrip(-1)" aria-label="Deslizar izquierda" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-sky-600 text-slate-200 hover:text-white border border-slate-700 text-xs flex items-center justify-center cursor-pointer transition">
+                        <i class="fa-solid fa-chevron-left"></i>
                     </button>
-                    <span id="quickChannelsCount" class="text-[11px] font-mono text-slate-400">0 canales</span>
+                    <button type="button" onclick="scrollChannelsStrip(1)" aria-label="Deslizar derecha" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-sky-600 text-slate-200 hover:text-white border border-slate-700 text-xs flex items-center justify-center cursor-pointer transition">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Solo 2 Categorías: TV EN VIVO y PELÍCULAS Y SERIES -->
             <div class="grid grid-cols-2 gap-2">
                 <button type="button" onclick="setChannelFilter('tv')" id="filter-tv" class="py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow">
                     <i class="fa-solid fa-tv"></i>
@@ -213,15 +203,7 @@
                 </button>
             </div>
 
-            <div id="viewerChannelIconsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-1"></div>
-        </section>
-
-        <!-- Barra de Acción Rápida -->
-        <section class="bg-[#0a1329] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-            <p class="text-xs text-slate-300">Toca cualquier ícono de <strong>TV en Vivo</strong> o <strong>Películas y Series</strong> para ver en pantalla.</p>
-            <button type="button" onclick="watch247WithSound()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shrink-0 cursor-pointer">
-                Activar Audio
-            </button>
+            <div id="viewerChannelIconsGrid" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
         </section>
 
     </main>
@@ -232,9 +214,7 @@
     </footer>
 
     <script>
-        const DEFAULT_CHANNELS = [];
-        const VIEWER_STORAGE_KEY = 'dnplus_viewer_saved_channels_v1';
-
+        const VIEWER_STORAGE_KEY = 'dnplus_viewer_saved_channels_v2';
         const MQTT_BROKERS = [
             'wss://broker.emqx.io:8084/mqtt',
             'wss://broker.hivemq.com:8884/mqtt',
@@ -246,48 +226,30 @@
             'dnplus/canal5/DNPLUS-CANAL5-OFICIAL',
             'canal5-dnplus-senal-vivo'
         ];
-        // Guardar el timestamp del último borrado explícito para no reintroducir listas limpiadas
-        let clearedAtTimestamp = 0;
-        let channels = [...DEFAULT_CHANNELS];
+
+        let channels = [];
         let currentIdx = 0;
         let currentFilter = 'tv';
         let currentStreamUrl = '';
+        let lastAppliedSignalTimestamp = 0;
+        let clearedAtTimestamp = 0;
         let hlsInstance = null;
-        let skipTimeout = null;
-        let audioCheckTimeout = null;
         let noticeTimeout = null;
         let isCssFull = false;
-        let bc = null;
         const activeMqttClients = [];
         const videoEl = document.getElementById('viewerVideo');
         const monitorEl = document.getElementById('tvMonitorBox');
 
-        try {
-            if (typeof BroadcastChannel !== 'undefined') {
-                bc = new BroadcastChannel('dnplus_live_system');
-                bc.onmessage = (ev) => {
-                    if (ev && ev.data) applyIncomingSignal(ev.data);
-                };
-            }
-        } catch (e) {}
-
-        function showTemporaryNotice(msg, durationMs = 2500) {
+        function showTemporaryNotice(msg, durationMs = 2200) {
             const box = document.getElementById('statusOverlay');
             const txt = document.getElementById('statusOverlayText');
             if (!box || !txt) return;
             txt.textContent = msg;
             box.classList.remove('hidden');
             clearTimeout(noticeTimeout);
-            if (durationMs > 0) {
-                noticeTimeout = setTimeout(() => {
-                    box.classList.add('hidden');
-                }, durationMs);
-            }
-        }
-
-        function hideTemporaryNotice() {
-            clearTimeout(noticeTimeout);
-            document.getElementById('statusOverlay')?.classList.add('hidden');
+            noticeTimeout = setTimeout(() => {
+                box.classList.add('hidden');
+            }, durationMs);
         }
 
         function updateMuteUi() {
@@ -300,8 +262,8 @@
                     ? 'fa-solid fa-volume-xmark text-red-400 text-sm'
                     : 'fa-solid fa-volume-high text-emerald-400 text-sm';
             }
-            if (tapBtn && !videoEl.classList.contains('hidden')) {
-                tapBtn.classList.toggle('hidden', !isMuted);
+            if (tapBtn) {
+                tapBtn.classList.toggle('hidden', !isMuted || !currentStreamUrl);
             }
         }
 
@@ -323,57 +285,8 @@
             updateMuteUi();
         }
 
-        function watch247WithSound() {
-            enableAudioNow();
-            const directIdx = channels.findIndex((c) => isDirectMediaUrl(c.url));
-            if ((!currentStreamUrl || !isDirectMediaUrl(currentStreamUrl)) && directIdx >= 0) {
-                playChannelAt(directIdx, true);
-            } else if (videoEl && !videoEl.classList.contains('hidden')) {
-                videoEl.play().catch(() => {});
-            }
-        }
-
-        function playDirectMediaFirst() {
-            const directIdx = channels.findIndex((c) => isDirectMediaUrl(c.url));
-            playChannelAt(directIdx >= 0 ? directIdx : 0, true);
-        }
-
         function isFullscreenNow() {
-            return Boolean(
-                document.fullscreenElement ||
-                document.webkitFullscreenElement ||
-                isCssFull
-            );
-        }
-
-        function setChannelFilter(filterName) {
-            currentFilter = filterName === 'peliculas' ? 'peliculas' : 'tv';
-            ['tv', 'peliculas'].forEach((name) => {
-                const btn = document.getElementById(`filter-${name}`);
-                if (!btn) return;
-                btn.className = name === currentFilter
-                    ? (name === 'peliculas'
-                        ? 'py-2 px-3 rounded-xl bg-violet-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow'
-                        : 'py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow')
-                    : 'py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition';
-            });
-            renderLists();
-        }
-
-        function classifyChannelCategory(item) {
-            if (item && item.category === 'peliculas') return 'peliculas';
-            if (item && item.category === 'tv') return 'tv';
-            const url = String(item?.url || '').trim();
-            return /\.(mp4|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
-        }
-
-        function isHlsStream(url) {
-            return /\.m3u8(\?|$)/i.test(String(url || '').trim());
-        }
-
-        function isDirectMediaUrl(url) {
-            const clean = String(url || '').trim();
-            return isHlsStream(clean) || /\.(mp4|webm|ogg|m4v)(\?|$)/i.test(clean);
+            return Boolean(document.fullscreenElement || document.webkitFullscreenElement || isCssFull);
         }
 
         function updateFullscreenUi() {
@@ -399,7 +312,6 @@
                     updateFullscreenUi();
                     return;
                 }
-
                 if (monitorEl && monitorEl.requestFullscreen) {
                     await monitorEl.requestFullscreen();
                     updateFullscreenUi();
@@ -413,11 +325,29 @@
             updateFullscreenUi();
         }
 
-        function clearTimers() {
-            clearTimeout(skipTimeout);
-            clearTimeout(audioCheckTimeout);
-            skipTimeout = null;
-            audioCheckTimeout = null;
+        function classifyChannelCategory(item) {
+            if (item && item.category === 'peliculas') return 'peliculas';
+            if (item && item.category === 'tv') return 'tv';
+            const url = String(item?.url || '').trim();
+            return /\.(mp4|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
+        }
+
+        function isHlsStream(url) {
+            return /\.m3u8(\?|$)/i.test(String(url || '').trim());
+        }
+
+        function setChannelFilter(filterName) {
+            currentFilter = filterName === 'peliculas' ? 'peliculas' : 'tv';
+            ['tv', 'peliculas'].forEach((name) => {
+                const btn = document.getElementById(`filter-${name}`);
+                if (!btn) return;
+                btn.className = name === currentFilter
+                    ? (name === 'peliculas'
+                        ? 'py-2 px-3 rounded-xl bg-violet-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow'
+                        : 'py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow')
+                    : 'py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition';
+            });
+            renderLists();
         }
 
         function saveViewerChannels() {
@@ -425,7 +355,7 @@
                 localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify({
                     channels: channels.slice(0, 150),
                     activeUrl: currentStreamUrl || (channels[currentIdx]?.url || ''),
-                    savedAt: Date.now()
+                    lastSignalTimestamp: lastAppliedSignalTimestamp
                 }));
             } catch (e) {}
         }
@@ -436,7 +366,14 @@
                 if (!raw) return;
                 const parsed = JSON.parse(raw);
                 if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
-                    channels = parsed.channels;
+                    channels = parsed.channels
+                        .filter((c) => c && c.url)
+                        .map((c) => ({
+                            title: String(c.title || 'Canal 5'),
+                            url: String(c.url).trim(),
+                            category: classifyChannelCategory(c)
+                        }));
+                    lastAppliedSignalTimestamp = Number(parsed.lastSignalTimestamp || 0);
                     if (parsed.activeUrl) {
                         const found = channels.findIndex((c) => c.url === parsed.activeUrl);
                         if (found >= 0) currentIdx = found;
@@ -447,9 +384,6 @@
 
         function playChannelAt(index, userInitiated = false) {
             if (!channels.length) return;
-            clearTimers();
-            hideTemporaryNotice();
-
             currentIdx = ((index % channels.length) + channels.length) % channels.length;
             const ch = channels[currentIdx];
             currentStreamUrl = ch.url;
@@ -466,7 +400,6 @@
             }
 
             if (videoEl) {
-                videoEl.classList.remove('hidden');
                 if (userInitiated) {
                     videoEl.muted = false;
                     videoEl.volume = 1;
@@ -483,7 +416,6 @@
 
                 if (isHlsStream(ch.url) || !/\.(mp4|webm|ogg|m4v)(\?|$)/i.test(ch.url)) {
                     if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                        // Buffer amplio y recuperación automática sin cortes (sin lowLatencyMode agresivo)
                         hlsInstance = new Hls({
                             enableWorker: true,
                             lowLatencyMode: false,
@@ -501,26 +433,21 @@
                         hlsInstance.attachMedia(videoEl);
                         hlsInstance.on(Hls.Events.MANIFEST_PARSED, startPlayback);
                         hlsInstance.on(Hls.Events.ERROR, (_, data) => {
-                            if (!data) return;
-                            if (data.fatal) {
-                                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                                    hlsInstance.startLoad();
-                                    return;
-                                }
-                                if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                                    hlsInstance.recoverMediaError();
-                                    return;
-                                }
-                                if (hlsInstance) {
-                                    hlsInstance.destroy();
-                                    hlsInstance = null;
-                                }
-                                showTemporaryNotice('Señal cortada o no disponible. Toca otro ícono para cambiar.', 3000);
+                            if (!data || !data.fatal) return;
+                            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                                hlsInstance.startLoad();
+                                return;
                             }
+                            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                                hlsInstance.recoverMediaError();
+                                return;
+                            }
+                            if (hlsInstance) {
+                                hlsInstance.destroy();
+                                hlsInstance = null;
+                            }
+                            showTemporaryNotice('Señal interrumpida. Toca otro ícono para cambiar.', 2600);
                         });
-                    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-                        videoEl.src = ch.url;
-                        startPlayback();
                     } else {
                         videoEl.src = ch.url;
                         videoEl.load();
@@ -541,9 +468,16 @@
             playChannelAt((currentIdx + 1) % channels.length, userInitiated);
         }
 
+        function scrollChannelsStrip(dir) {
+            const strip = document.getElementById('viewerChannelIconsGrid');
+            if (!strip) return;
+            strip.scrollBy({ left: dir * 240, behavior: 'smooth' });
+        }
+
         function renderLists() {
             const iconsGrid = document.getElementById('viewerChannelIconsGrid');
             const quickCount = document.getElementById('quickChannelsCount');
+            const counterEl = document.getElementById('channelCounterText');
 
             const filteredEntries = channels
                 .map((ch, idx) => ({ ch, idx }))
@@ -554,70 +488,65 @@
                     ? `${filteredEntries.length} títulos`
                     : `${filteredEntries.length} canales`;
             }
-
-            if (iconsGrid) {
-                iconsGrid.innerHTML = '';
-                const slotCount = Math.max(filteredEntries.length, 6);
-                for (let s = 0; s < slotCount; s++) {
-                    const entry = filteredEntries[s];
-                    if (entry) {
-                        const { ch, idx } = entry;
-                        const isPlaying = idx === currentIdx && ch.url === currentStreamUrl;
-                        const cat = classifyChannelCategory(ch);
-                        const isMovie = cat === 'peliculas';
-                        const grad = isMovie ? 'from-violet-600 to-indigo-800' : 'from-sky-500 to-blue-700';
-                        const iconName = isMovie ? 'fa-film' : 'fa-tv';
-                        const cardBtn = document.createElement('button');
-                        cardBtn.type = 'button';
-                        cardBtn.onclick = () => playChannelAt(idx, true);
-                        cardBtn.className = `p-2.5 rounded-2xl border text-left flex items-center gap-2.5 transition cursor-pointer min-w-0 ${
-                            isPlaying
-                                ? 'bg-sky-600/25 border-sky-400 text-white font-extrabold shadow-lg ring-1 ring-sky-400/50'
-                                : 'bg-slate-950/90 border-slate-800 text-slate-200 hover:border-sky-500/60 hover:bg-slate-900'
-                        }`;
-                        cardBtn.innerHTML = `
-                            <span class="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${grad} text-white shadow-md">
-                                <i class="fa-solid ${iconName} text-sm"></i>
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[11px] font-extrabold truncate">${ch.title}</p>
-                                <p class="text-[9px] uppercase tracking-wider mt-0.5 ${
-                                    isPlaying ? 'text-emerald-400 font-black' : (isMovie ? 'text-violet-400' : 'text-sky-400')
-                                }">${isPlaying ? '● VIENDO AHORA' : (isMovie ? 'PELÍCULAS Y SERIES' : 'TV EN VIVO')}</p>
-                            </div>
-                        `;
-                        iconsGrid.appendChild(cardBtn);
-                    } else {
-                        const isMovieSlot = currentFilter === 'peliculas';
-                        const emptySlot = document.createElement('div');
-                        emptySlot.className = 'p-2.5 rounded-2xl border border-dashed border-slate-800/90 bg-slate-950/50 flex items-center gap-2.5 min-w-0';
-                        emptySlot.innerHTML = `
-                            <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-slate-900 border border-slate-800 text-slate-600">
-                                <i class="fa-solid ${isMovieSlot ? 'fa-film' : 'fa-tv'} text-sm"></i>
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[11px] font-bold text-slate-600 truncate">${isMovieSlot ? 'Película / Serie' : 'Canal libre'}</p>
-                                <p class="text-[9px] text-slate-700 truncate">Desde panel</p>
-                            </div>
-                        `;
-                        iconsGrid.appendChild(emptySlot);
-                    }
-                }
+            if (counterEl) {
+                counterEl.textContent = channels.length > 0 ? `${currentIdx + 1} / ${channels.length}` : '0 / 0';
             }
+
+            if (!iconsGrid) return;
+            iconsGrid.innerHTML = '';
+
+            if (!filteredEntries.length) {
+                iconsGrid.innerHTML = `
+                    <div class="w-full py-6 px-3 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-400">
+                        ${currentFilter === 'peliculas' ? 'Aún no hay películas o series disponibles.' : 'Esperando canales en vivo...'}
+                    </div>
+                `;
+                return;
+            }
+
+            const frag = document.createDocumentFragment();
+            filteredEntries.forEach(({ ch, idx }) => {
+                const isPlaying = idx === currentIdx && ch.url === currentStreamUrl;
+                const isMovie = classifyChannelCategory(ch) === 'peliculas';
+                const grad = isMovie ? 'from-violet-600 to-indigo-800' : 'from-sky-500 to-blue-700';
+                const iconName = isMovie ? 'fa-film' : 'fa-tv';
+
+                const cardBtn = document.createElement('button');
+                cardBtn.type = 'button';
+                cardBtn.onclick = () => playChannelAt(idx, true);
+                cardBtn.className = `snap-start shrink-0 w-36 sm:w-44 p-2.5 rounded-2xl border text-left flex flex-col items-center justify-center gap-2 transition cursor-pointer ${
+                    isPlaying
+                        ? 'bg-sky-600/25 border-sky-400 text-white font-extrabold shadow-lg ring-1 ring-sky-400/50'
+                        : 'bg-slate-950/90 border-slate-800 text-slate-200 hover:border-sky-500/60 hover:bg-slate-900'
+                }`;
+                cardBtn.innerHTML = `
+                    <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${grad} text-white shadow-md">
+                        <i class="fa-solid ${iconName} text-base"></i>
+                    </span>
+                    <div class="w-full text-center min-w-0">
+                        <p class="text-[11px] font-extrabold truncate">${ch.title}</p>
+                        <p class="text-[9px] uppercase tracking-wider mt-0.5 ${
+                            isPlaying ? 'text-emerald-400 font-black' : (isMovie ? 'text-violet-400' : 'text-sky-400')
+                        }">${isPlaying ? '● VIENDO' : (isMovie ? 'PELÍCULAS' : 'TV EN VIVO')}</p>
+                    </div>
+                `;
+                frag.appendChild(cardBtn);
+            });
+            iconsGrid.appendChild(frag);
         }
 
         function applyIncomingSignal(payload) {
             if (!payload || typeof payload !== 'object') return;
             const msgTs = Number(payload.timestamp || 0);
+
             if (payload.clearAll === true) {
                 clearedAtTimestamp = Math.max(clearedAtTimestamp, msgTs || Date.now());
+                lastAppliedSignalTimestamp = clearedAtTimestamp;
                 channels = [];
                 currentIdx = 0;
                 currentStreamUrl = '';
                 try {
                     localStorage.removeItem(VIEWER_STORAGE_KEY);
-                    localStorage.removeItem('dnplus_live_signal');
-                    localStorage.removeItem('dnplus_live_playlist');
                 } catch (e) {}
                 if (hlsInstance) {
                     hlsInstance.destroy();
@@ -629,37 +558,38 @@
                     videoEl.load();
                 }
                 const titleEl = document.getElementById('currentChannelTitle');
-                const counterEl = document.getElementById('channelCounterText');
-                const syncEl = document.getElementById('syncStatusText');
-                if (titleEl) titleEl.textContent = 'Esperando canales del panel...';
-                if (counterEl) counterEl.textContent = '0 / 0';
-                if (syncEl) syncEl.textContent = 'Lista limpia • Esperando señal del panel';
+                if (titleEl) titleEl.textContent = 'Esperando señal del canal...';
                 renderLists();
                 return;
             }
+
             if (clearedAtTimestamp > 0 && msgTs > 0 && msgTs <= clearedAtTimestamp) return;
-            const incomingUrl = String(payload.url || payload.streamUrl || payload.embedUrl || '').trim();
+            if (msgTs > 0 && lastAppliedSignalTimestamp > 0 && msgTs < lastAppliedSignalTimestamp && channels.length > 0) {
+                return;
+            }
+            if (msgTs > lastAppliedSignalTimestamp) {
+                lastAppliedSignalTimestamp = msgTs;
+            }
+
+            const incomingUrl = String(payload.url || payload.streamUrl || '').trim();
             const incomingTitle = String(payload.title || '').trim();
-            let listUpdated = false;
+            let updated = false;
 
             if (Array.isArray(payload.playlist) && payload.playlist.length > 0) {
-                const replaced = payload.playlist
+                const normalized = payload.playlist
                     .filter((item) => item && item.url)
-                    .map((item) => {
-                        const cat = classifyChannelCategory(item);
-                        return {
-                            title: item.title || 'Canal 5',
-                            url: item.url,
-                            category: cat
-                        };
-                    });
-                const prevSignature = channels.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
-                const nextSignature = replaced.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
-                if (replaced.length > 0 && prevSignature !== nextSignature) {
-                    channels = replaced;
+                    .map((item) => ({
+                        title: String(item.title || 'Canal 5'),
+                        url: String(item.url).trim(),
+                        category: classifyChannelCategory(item)
+                    }));
+                const prevSig = channels.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
+                const nextSig = normalized.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
+                if (normalized.length > 0 && prevSig !== nextSig) {
+                    channels = normalized;
                     const keptIdx = currentStreamUrl ? channels.findIndex((c) => c.url === currentStreamUrl) : -1;
                     currentIdx = keptIdx >= 0 ? keptIdx : 0;
-                    listUpdated = true;
+                    updated = true;
                     saveViewerChannels();
                     renderLists();
                 }
@@ -668,39 +598,32 @@
             if (incomingUrl) {
                 let idx = channels.findIndex((c) => c.url === incomingUrl);
                 if (idx < 0) {
-                    const cat = classifyChannelCategory({ title: incomingTitle, url: incomingUrl, category: payload.category });
                     channels.push({
                         title: incomingTitle || 'Canal 5 DNPlus TV',
                         url: incomingUrl,
-                        category: cat
+                        category: classifyChannelCategory({ title: incomingTitle, url: incomingUrl, category: payload.category })
                     });
                     idx = channels.length - 1;
-                    listUpdated = true;
-                    saveViewerChannels();
-                    renderLists();
-                } else if (incomingTitle && channels[idx].title !== incomingTitle) {
-                    channels[idx].title = incomingTitle;
+                    updated = true;
                     saveViewerChannels();
                     renderLists();
                 }
-
-                // Nunca interrumpir ni cambiar el canal que el espectador está viendo; solo iniciar si no había nada reproduciéndose
                 if (!currentStreamUrl && channels.length > 0) {
                     playChannelAt(idx, false);
                 }
-                const syncEl = document.getElementById('syncStatusText');
-                if (syncEl) {
-                    syncEl.textContent = `Lista sincronizada • ${channels.length} disponibles`;
-                    syncEl.className = 'text-[11px] text-emerald-400 font-semibold truncate';
-                }
-            } else if (listUpdated && channels.length > 0 && !currentStreamUrl) {
+            } else if (updated && channels.length > 0 && !currentStreamUrl) {
                 playChannelAt(0, false);
+            }
+
+            const syncEl = document.getElementById('syncStatusText');
+            if (syncEl && channels.length > 0) {
+                syncEl.textContent = `Señal Activa • ${channels.length} disponibles`;
+                syncEl.className = 'text-[11px] text-emerald-400 font-semibold truncate';
             }
         }
 
         function initMqttSync() {
             if (typeof mqtt === 'undefined') return;
-            const syncEl = document.getElementById('syncStatusText');
             activeMqttClients.forEach((c) => {
                 try { c.end(true); } catch (e) {}
             });
@@ -715,10 +638,6 @@
                     });
                     activeMqttClients.push(client);
                     client.on('connect', () => {
-                        if (syncEl) {
-                            syncEl.textContent = 'Conectado al Panel en Vivo • 24/7';
-                            syncEl.className = 'text-[11px] text-emerald-400 font-semibold truncate';
-                        }
                         MQTT_TOPICS.forEach((topic) => {
                             try { client.subscribe(topic, { qos: 1 }); } catch (e) {}
                         });
@@ -726,12 +645,9 @@
                     client.on('message', (_, message) => {
                         try {
                             const rawStr = message.toString();
-                            if (!rawStr) return;
-                            const data = JSON.parse(rawStr);
-                            applyIncomingSignal(data);
+                            if (rawStr) applyIncomingSignal(JSON.parse(rawStr));
                         } catch (e) {}
                     });
-                    client.on('error', () => {});
                 } catch (e) {}
             });
         }
@@ -739,72 +655,24 @@
         function refreshChannelsFromPanel() {
             const icon = document.getElementById('refreshIcon');
             if (icon) icon.classList.add('fa-spin');
-            showTemporaryNotice('Limpiando y buscando canales del panel...', 2200);
-
-            // Vaciar canales actuales en pantalla y memoria antes de leer lo nuevo del panel
-            channels = [];
-            currentIdx = 0;
-            currentStreamUrl = '';
-            if (hlsInstance) {
-                hlsInstance.destroy();
-                hlsInstance = null;
-            }
-            if (videoEl) {
-                videoEl.pause();
-                videoEl.removeAttribute('src');
-                videoEl.load();
-            }
-            const titleEl = document.getElementById('currentChannelTitle');
-            const counterEl = document.getElementById('channelCounterText');
-            if (titleEl) titleEl.textContent = 'Esperando canales del panel...';
-            if (counterEl) counterEl.textContent = '0 / 0';
-            renderLists();
-
+            showTemporaryNotice('Actualizando canales...', 1600);
             try {
                 const savedSignal = localStorage.getItem('dnplus_live_signal');
-                if (savedSignal) {
-                    applyIncomingSignal(JSON.parse(savedSignal));
-                } else {
-                    const savedList = localStorage.getItem('dnplus_live_playlist');
-                    if (savedList) {
-                        applyIncomingSignal({ playlist: JSON.parse(savedList) });
-                    }
-                }
+                if (savedSignal) applyIncomingSignal(JSON.parse(savedSignal));
             } catch (e) {}
-
-            // Reconectar MQTT para recibir al instante la última lista vigente del panel
             initMqttSync();
-
             setTimeout(() => {
                 if (icon) icon.classList.remove('fa-spin');
-            }, 1200);
+            }, 900);
         }
 
         if (videoEl) {
-            // No cambiar de canal al terminar ni al ocurrir un error: esperar a que el usuario toque un ícono
-            videoEl.addEventListener('ended', () => {
-                showTemporaryNotice('Transmisión finalizada. Toca un ícono para ver otro canal.', 3000);
-            });
-            videoEl.addEventListener('error', () => {
-                if (!videoEl.classList.contains('hidden') && currentStreamUrl) {
-                    showTemporaryNotice('Canal interrumpido. Toca otro ícono si deseas cambiar.', 3500);
-                }
-            });
             videoEl.addEventListener('volumechange', updateMuteUi);
         }
 
         window.addEventListener('storage', (e) => {
             if (e.key === 'dnplus_live_signal' && e.newValue) {
-                try {
-                    applyIncomingSignal(JSON.parse(e.newValue));
-                } catch (err) {}
-            } else if (e.key === 'dnplus_live_playlist' && e.newValue) {
-                try {
-                    const list = JSON.parse(e.newValue);
-                    if (Array.isArray(list) && list.length > 0) {
-                        applyIncomingSignal({ playlist: list });
-                    }
-                } catch (err) {}
+                try { applyIncomingSignal(JSON.parse(e.newValue)); } catch (err) {}
             }
         });
 
