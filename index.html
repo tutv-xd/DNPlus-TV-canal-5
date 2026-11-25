@@ -87,124 +87,164 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-3 flex flex-col gap-3">
 
-        <!-- Monitor TV Estático (Fijo arriba al deslizar canales) -->
-        <section id="tvMonitorBox" class="sticky top-[57px] z-20 relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-sky-500/40 shadow-[0_14px_35px_rgba(0,0,0,0.9)] flex items-center justify-center">
-            <div class="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 bg-slate-950/85 px-2.5 py-1 rounded-xl border border-white/10 pointer-events-none">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                <span class="text-[11px] font-black text-white uppercase">DNPLUS TV</span>
-                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">ALTA</span>
-                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">SEÑAL 1</span>
-            </div>
-
-            <div id="statusOverlay" class="hidden absolute inset-x-4 top-14 z-30 bg-slate-950/90 border border-sky-500/40 text-sky-200 px-3.5 py-2 rounded-2xl text-xs font-bold text-center shadow-lg">
-                <span id="statusOverlayText">Sincronizando señal...</span>
-            </div>
-
-            <video
-                id="viewerVideo"
-                class="w-full h-full object-contain bg-black"
-                autoplay
-                playsinline
-                controlsList="nodownload noplaybackrate"
-            ></video>
-
-            <button
-                type="button"
-                id="btnTapForAudio"
-                onclick="enableAudioNow()"
-                class="hidden absolute top-14 left-3 z-20 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1.5 shadow-lg transition cursor-pointer"
-            >
-                <i class="fa-solid fa-volume-high"></i>
-                <span>Toca para activar audio</span>
-            </button>
-
-            <div class="absolute bottom-3 right-3 z-20 flex items-center gap-2">
-                <button
-                    type="button"
-                    id="btnToggleMute"
-                    onclick="toggleMute()"
-                    aria-label="Activar o silenciar audio"
-                    class="w-10 h-10 rounded-2xl bg-slate-950/85 hover:bg-slate-900 text-white border border-white/15 flex items-center justify-center shadow-lg transition cursor-pointer"
-                >
-                    <i id="muteIcon" class="fa-solid fa-volume-xmark text-white text-sm"></i>
-                </button>
-
-                <button
-                    type="button"
-                    id="btnTvFull"
-                    onclick="toggleTvFullscreen()"
-                    aria-label="Pantalla Completa TV"
-                    class="h-10 px-3 rounded-2xl bg-slate-950/85 hover:bg-sky-600 text-white border border-white/15 flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer"
-                >
-                    <i id="fsIcon" class="fa-solid fa-expand text-white text-sm"></i>
-                    <span id="fsLabel" class="text-[11px] font-black uppercase">TV</span>
-                </button>
-            </div>
-        </section>
-
-        <!-- Barra de Canal Actual -->
-        <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-            <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                    <span class="px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-black uppercase">EN VIVO 24/7</span>
-                    <span id="channelCounterText" class="text-[11px] font-mono text-slate-400">0 / 0</span>
+        <!-- Bloque Superior Estático: Monitor TV + Barra Refrescar -->
+        <div class="sticky top-[57px] z-20 bg-[#030712]/95 backdrop-blur-md pb-2 flex flex-col gap-2.5">
+            <!-- Monitor TV Estático -->
+            <section id="tvMonitorBox" class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-sky-500/40 shadow-[0_14px_35px_rgba(0,0,0,0.9)] flex items-center justify-center">
+                <div class="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 bg-slate-950/85 px-2.5 py-1 rounded-xl border border-white/10 pointer-events-none">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    <span class="text-[11px] font-black text-white uppercase">DNPLUS TV</span>
+                    <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">ALTA</span>
+                    <span id="activeCategoryBadge" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 uppercase">TV EN VIVO</span>
                 </div>
-                <h2 id="currentChannelTitle" class="text-sm sm:text-base font-black text-white truncate">
-                    Esperando señal del canal...
-                </h2>
-            </div>
 
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <div id="statusOverlay" class="hidden absolute inset-x-4 top-14 z-30 bg-slate-950/90 border border-sky-500/40 text-sky-200 px-3.5 py-2 rounded-2xl text-xs font-bold text-center shadow-lg">
+                    <span id="statusOverlayText">Sincronizando señal...</span>
+                </div>
+
+                <video
+                    id="viewerVideo"
+                    class="w-full h-full object-contain bg-black"
+                    autoplay
+                    playsinline
+                    controlsList="nodownload noplaybackrate"
+                ></video>
+
                 <button
                     type="button"
-                    id="btnRefreshViewers"
-                    onclick="refreshChannelsFromPanel()"
-                    class="bg-sky-600 hover:bg-sky-500 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow"
-                >
-                    <i id="refreshIcon" class="fa-solid fa-arrows-rotate"></i>
-                    <span>Refrescar</span>
-                </button>
-                <button
-                    type="button"
+                    id="btnTapForAudio"
                     onclick="enableAudioNow()"
-                    class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
+                    class="hidden absolute top-14 left-3 z-20 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1.5 shadow-lg transition cursor-pointer"
                 >
                     <i class="fa-solid fa-volume-high"></i>
-                    <span>Audio</span>
+                    <span>Toca para activar audio</span>
                 </button>
-                <button
-                    type="button"
-                    onclick="playNextChannel(true)"
-        <!-- Íconos de Canales Deslizables (Solo TV EN VIVO y PELÍCULAS Y SERIES) -->
-        <section id="viewerChannelsBar" class="bg-[#0a1329] border border-blue-800/60 rounded-2xl p-3.5 flex flex-col gap-2.5 shadow-lg">
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-tv"></i> Desliza y toca un canal
-                </span>
-                <div class="flex items-center gap-1.5">
-                    <span id="quickChannelsCount" class="text-[11px] font-mono text-slate-400 mr-1">0 canales</span>
-                    <button type="button" onclick="scrollChannelsStrip(-1)" aria-label="Deslizar izquierda" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-sky-600 text-slate-200 hover:text-white border border-slate-700 text-xs flex items-center justify-center cursor-pointer transition">
-                        <i class="fa-solid fa-chevron-left"></i>
+
+                <div class="absolute bottom-3 right-3 z-20 flex items-center gap-2">
+                    <button
+                        type="button"
+                        id="btnToggleMute"
+                        onclick="toggleMute()"
+                        aria-label="Activar o silenciar audio"
+                        class="w-10 h-10 rounded-2xl bg-slate-950/85 hover:bg-slate-900 text-white border border-white/15 flex items-center justify-center shadow-lg transition cursor-pointer"
+                    >
+                        <i id="muteIcon" class="fa-solid fa-volume-xmark text-white text-sm"></i>
                     </button>
-                    <button type="button" onclick="scrollChannelsStrip(1)" aria-label="Deslizar derecha" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-sky-600 text-slate-200 hover:text-white border border-slate-700 text-xs flex items-center justify-center cursor-pointer transition">
-                        <i class="fa-solid fa-chevron-right"></i>
+
+                    <button
+                        type="button"
+                        id="btnTvFull"
+                        onclick="toggleTvFullscreen()"
+                        aria-label="Pantalla Completa TV"
+                        class="h-10 px-3 rounded-2xl bg-slate-950/85 hover:bg-sky-600 text-white border border-white/15 flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer"
+                    >
+                        <i id="fsIcon" class="fa-solid fa-expand text-white text-sm"></i>
+                        <span id="fsLabel" class="text-[11px] font-black uppercase">TV</span>
                     </button>
                 </div>
-            </div>
+            </section>
 
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" onclick="setChannelFilter('tv')" id="filter-tv" class="py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow">
-                    <i class="fa-solid fa-tv"></i>
-                    <span>TV EN VIVO</span>
-                </button>
-                <button type="button" onclick="setChannelFilter('peliculas')" id="filter-peliculas" class="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition">
-                    <i class="fa-solid fa-film"></i>
-                    <span>PELÍCULAS Y SERIES</span>
-                </button>
-            </div>
+            <!-- Barra de Canal Actual y Refrescar (Fija debajo del reproductor) -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-lg">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-black uppercase">EN VIVO 24/7</span>
+                        <span id="channelCounterText" class="text-[11px] font-mono text-slate-400">0 / 0</span>
+                    </div>
+                    <h2 id="currentChannelTitle" class="text-sm sm:text-base font-black text-white truncate">
+                        Esperando señal del canal...
+                    </h2>
+                </div>
 
-            <div id="viewerChannelIconsGrid" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
-        </section>
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        id="btnRefreshViewers"
+                        onclick="refreshChannelsFromPanel()"
+                        class="bg-sky-600 hover:bg-sky-500 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow"
+                    >
+                        <i id="refreshIcon" class="fa-solid fa-arrows-rotate"></i>
+                        <span>Refrescar</span>
+                    </button>
+                    <button
+                        type="button"
+                        onclick="enableAudioNow()"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                        <i class="fa-solid fa-volume-high"></i>
+                        <span>Audio</span>
+                    </button>
+                    <button
+                        type="button"
+                        onclick="playNextChannel(true)"
+                        class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 transition cursor-pointer"
+                    >
+                        <span>Siguiente</span>
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Catálogos Deslizables por Debajo y Detrás del Reproductor -->
+        <div id="viewerCategoriesContainer" class="relative z-10 flex flex-col gap-3.5 pb-4">
+
+            <!-- Fila 1: TV EN VIVO -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-tv"></i> TV en Vivo
+                    </h3>
+                    <span id="count-tv" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-tv" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Fila 2: PELÍCULAS Y SERIES -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-violet-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-film"></i> Películas y Series
+                    </h3>
+                    <span id="count-peliculas" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-peliculas" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Fila 3: DEPORTES -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-futbol"></i> Deportes
+                    </h3>
+                    <span id="count-deportes" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-deportes" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Fila 4: NOVELAS -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-heart"></i> Novelas
+                    </h3>
+                    <span id="count-novelas" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-novelas" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Fila 5: TV 24/7 -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-infinity"></i> TV 24/7
+                    </h3>
+                    <span id="count-247" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-247" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+        </div>
 
     </main>
 
@@ -229,7 +269,6 @@
 
         let channels = [];
         let currentIdx = 0;
-        let currentFilter = 'tv';
         let currentStreamUrl = '';
         let lastAppliedSignalTimestamp = 0;
         let clearedAtTimestamp = 0;
@@ -240,31 +279,95 @@
         const videoEl = document.getElementById('viewerVideo');
         const monitorEl = document.getElementById('tvMonitorBox');
 
-        function showTemporaryNotice(msg, durationMs = 2200) {
+        const CATEGORY_META = {
+            tv: { label: 'TV EN VIVO', icon: 'fa-tv', grad: 'from-sky-500 to-blue-700', text: 'text-sky-400' },
+            peliculas: { label: 'PELÍCULAS', icon: 'fa-film', grad: 'from-violet-600 to-indigo-800', text: 'text-violet-400' },
+            deportes: { label: 'DEPORTES', icon: 'fa-futbol', grad: 'from-emerald-500 to-teal-700', text: 'text-emerald-400' },
+            novelas: { label: 'NOVELAS', icon: 'fa-heart', grad: 'from-rose-500 to-pink-700', text: 'text-rose-400' },
+            '247': { label: 'TV 24/7', icon: 'fa-infinity', grad: 'from-amber-500 to-orange-700', text: 'text-amber-400' }
+        };
+
+        function showStatusNotice(msg, ms = 2000) {
             const box = document.getElementById('statusOverlay');
-            const txt = document.getElementById('statusOverlayText');
-            if (!box || !txt) return;
-            txt.textContent = msg;
+            const text = document.getElementById('statusOverlayText');
+            if (!box || !text) return;
+            text.textContent = msg;
             box.classList.remove('hidden');
             clearTimeout(noticeTimeout);
-            noticeTimeout = setTimeout(() => {
-                box.classList.add('hidden');
-            }, durationMs);
+            if (ms > 0) {
+                noticeTimeout = setTimeout(() => box.classList.add('hidden'), ms);
+            }
+        }
+
+        function classifyChannelCategory(item) {
+            const validCats = ['tv', 'peliculas', 'deportes', 'novelas', '247'];
+            if (item && validCats.includes(item.category)) return item.category;
+            const url = String(item?.url || '').trim();
+            return /\.(mp4|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
+        }
+
+        function isHlsStream(url) {
+            return /\.m3u8(\?|$)/i.test(String(url || '').trim());
+        }
+
+        function saveViewerChannels() {
+            try {
+                localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify({
+                    channels,
+                    currentIdx,
+                    currentStreamUrl,
+                    lastAppliedSignalTimestamp,
+                    clearedAtTimestamp
+                }));
+            } catch (e) {}
+        }
+
+        function loadViewerChannels() {
+            try {
+                const raw = localStorage.getItem(VIEWER_STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed.channels)) {
+                    channels = parsed.channels
+                        .filter((c) => c && c.url)
+                        .map((c) => ({
+                            title: String(c.title || 'Canal 5'),
+                            url: String(c.url).trim(),
+                            category: classifyChannelCategory(c)
+                        }));
+                }
+                if (typeof parsed.currentIdx === 'number') currentIdx = parsed.currentIdx;
+                if (typeof parsed.currentStreamUrl === 'string') currentStreamUrl = parsed.currentStreamUrl;
+                if (typeof parsed.lastAppliedSignalTimestamp === 'number') lastAppliedSignalTimestamp = parsed.lastAppliedSignalTimestamp;
+                if (typeof parsed.clearedAtTimestamp === 'number') clearedAtTimestamp = parsed.clearedAtTimestamp;
+            } catch (e) {}
         }
 
         function updateMuteUi() {
             const icon = document.getElementById('muteIcon');
             const tapBtn = document.getElementById('btnTapForAudio');
             if (!videoEl) return;
-            const isMuted = Boolean(videoEl.muted);
             if (icon) {
-                icon.className = isMuted
-                    ? 'fa-solid fa-volume-xmark text-red-400 text-sm'
+                icon.className = videoEl.muted
+                    ? 'fa-solid fa-volume-xmark text-white text-sm'
                     : 'fa-solid fa-volume-high text-emerald-400 text-sm';
             }
             if (tapBtn) {
-                tapBtn.classList.toggle('hidden', !isMuted || !currentStreamUrl);
+                if (videoEl.muted && currentStreamUrl) {
+                    tapBtn.classList.remove('hidden');
+                } else {
+                    tapBtn.classList.add('hidden');
+                }
             }
+        }
+
+        function enableAudioNow() {
+            if (!videoEl) return;
+            videoEl.muted = false;
+            videoEl.volume = 1;
+            videoEl.play().catch(() => {});
+            updateMuteUi();
+            showStatusNotice('Audio activado', 1400);
         }
 
         function toggleMute() {
@@ -277,184 +380,96 @@
             updateMuteUi();
         }
 
-        function enableAudioNow() {
-            if (!videoEl) return;
-            videoEl.muted = false;
-            videoEl.volume = 1;
-            videoEl.play().catch(() => {});
-            updateMuteUi();
-        }
+        function toggleTvFullscreen() {
+            if (!monitorEl) return;
+            const fsIcon = document.getElementById('fsIcon');
+            const fsLabel = document.getElementById('fsLabel');
+            const isNativeFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
 
-        function isFullscreenNow() {
-            return Boolean(document.fullscreenElement || document.webkitFullscreenElement || isCssFull);
-        }
-
-        function updateFullscreenUi() {
-            const active = isFullscreenNow();
-            const icon = document.getElementById('fsIcon');
-            const label = document.getElementById('fsLabel');
-            if (icon) icon.className = active ? 'fa-solid fa-compress text-white text-sm' : 'fa-solid fa-expand text-white text-sm';
-            if (label) label.textContent = active ? 'Salir' : 'TV';
-        }
-
-        async function toggleTvFullscreen() {
-            try {
-                if (isFullscreenNow()) {
-                    if (isCssFull) {
-                        isCssFull = false;
-                        monitorEl?.classList.remove('tv-expanded-fs');
-                        document.body.style.overflow = '';
-                    } else if (document.exitFullscreen) {
-                        await document.exitFullscreen();
-                    } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen();
-                    }
-                    updateFullscreenUi();
-                    return;
+            if (!isNativeFs && !isCssFull) {
+                if (monitorEl.requestFullscreen) {
+                    monitorEl.requestFullscreen().catch(() => {
+                        isCssFull = true;
+                        monitorEl.classList.add('tv-expanded-fs');
+                    });
+                } else if (monitorEl.webkitRequestFullscreen) {
+                    monitorEl.webkitRequestFullscreen();
+                } else {
+                    isCssFull = true;
+                    monitorEl.classList.add('tv-expanded-fs');
                 }
-                if (monitorEl && monitorEl.requestFullscreen) {
-                    await monitorEl.requestFullscreen();
-                    updateFullscreenUi();
-                    return;
+                if (fsIcon) fsIcon.className = 'fa-solid fa-compress text-white text-sm';
+                if (fsLabel) fsLabel.textContent = 'Salir';
+            } else {
+                if (isNativeFs) {
+                    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                 }
-            } catch (e) {}
-
-            isCssFull = true;
-            monitorEl?.classList.add('tv-expanded-fs');
-            document.body.style.overflow = 'hidden';
-            updateFullscreenUi();
-        }
-
-        function classifyChannelCategory(item) {
-            if (item && item.category === 'peliculas') return 'peliculas';
-            if (item && item.category === 'tv') return 'tv';
-            const url = String(item?.url || '').trim();
-            return /\.(mp4|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
-        }
-
-        function isHlsStream(url) {
-            return /\.m3u8(\?|$)/i.test(String(url || '').trim());
-        }
-
-        function setChannelFilter(filterName) {
-            currentFilter = filterName === 'peliculas' ? 'peliculas' : 'tv';
-            ['tv', 'peliculas'].forEach((name) => {
-                const btn = document.getElementById(`filter-${name}`);
-                if (!btn) return;
-                btn.className = name === currentFilter
-                    ? (name === 'peliculas'
-                        ? 'py-2 px-3 rounded-xl bg-violet-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow'
-                        : 'py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition shadow')
-                    : 'py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition';
-            });
-            renderLists();
-        }
-
-        function saveViewerChannels() {
-            try {
-                localStorage.setItem(VIEWER_STORAGE_KEY, JSON.stringify({
-                    channels: channels.slice(0, 150),
-                    activeUrl: currentStreamUrl || (channels[currentIdx]?.url || ''),
-                    lastSignalTimestamp: lastAppliedSignalTimestamp
-                }));
-            } catch (e) {}
-        }
-
-        function loadViewerChannels() {
-            try {
-                const raw = localStorage.getItem(VIEWER_STORAGE_KEY);
-                if (!raw) return;
-                const parsed = JSON.parse(raw);
-                if (parsed && Array.isArray(parsed.channels) && parsed.channels.length > 0) {
-                    channels = parsed.channels
-                        .filter((c) => c && c.url)
-                        .map((c) => ({
-                            title: String(c.title || 'Canal 5'),
-                            url: String(c.url).trim(),
-                            category: classifyChannelCategory(c)
-                        }));
-                    lastAppliedSignalTimestamp = Number(parsed.lastSignalTimestamp || 0);
-                    if (parsed.activeUrl) {
-                        const found = channels.findIndex((c) => c.url === parsed.activeUrl);
-                        if (found >= 0) currentIdx = found;
-                    }
-                }
-            } catch (e) {}
+                isCssFull = false;
+                monitorEl.classList.remove('tv-expanded-fs');
+                if (fsIcon) fsIcon.className = 'fa-solid fa-expand text-white text-sm';
+                if (fsLabel) fsLabel.textContent = 'TV';
+            }
         }
 
         function playChannelAt(index, userInitiated = false) {
             if (!channels.length) return;
             currentIdx = ((index % channels.length) + channels.length) % channels.length;
             const ch = channels[currentIdx];
+            const cat = classifyChannelCategory(ch);
+            const meta = CATEGORY_META[cat] || CATEGORY_META.tv;
             currentStreamUrl = ch.url;
             saveViewerChannels();
 
             const titleEl = document.getElementById('currentChannelTitle');
             const counterEl = document.getElementById('channelCounterText');
+            const badgeEl = document.getElementById('activeCategoryBadge');
             if (titleEl) titleEl.textContent = ch.title || 'Canal 5 DNPlus TV';
             if (counterEl) counterEl.textContent = `${currentIdx + 1} / ${channels.length}`;
+            if (badgeEl) badgeEl.textContent = meta.label;
 
             if (hlsInstance) {
-                hlsInstance.destroy();
+                try { hlsInstance.destroy(); } catch (e) {}
                 hlsInstance = null;
             }
 
             if (videoEl) {
-                if (userInitiated) {
-                    videoEl.muted = false;
-                    videoEl.volume = 1;
-                }
-                updateMuteUi();
+                videoEl.pause();
+                videoEl.removeAttribute('src');
+                videoEl.load();
+                videoEl.muted = !userInitiated;
 
                 const startPlayback = () => {
-                    videoEl.play().catch(() => {
-                        videoEl.muted = true;
+                    videoEl.play().then(() => {
                         updateMuteUi();
+                    }).catch(() => {
+                        videoEl.muted = true;
                         videoEl.play().catch(() => {});
+                        updateMuteUi();
                     });
                 };
 
-                if (isHlsStream(ch.url) || !/\.(mp4|webm|ogg|m4v)(\?|$)/i.test(ch.url)) {
-                    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                        hlsInstance = new Hls({
-                            enableWorker: true,
-                            lowLatencyMode: false,
-                            maxBufferLength: 30,
-                            maxMaxBufferLength: 60,
-                            backBufferLength: 30,
-                            liveSyncDurationCount: 3,
-                            liveMaxLatencyDurationCount: 10,
-                            manifestLoadingMaxRetry: 6,
-                            levelLoadingMaxRetry: 6,
-                            fragLoadingMaxRetry: 8,
-                            fragLoadingRetryDelay: 1000
-                        });
-                        hlsInstance.loadSource(ch.url);
-                        hlsInstance.attachMedia(videoEl);
-                        hlsInstance.on(Hls.Events.MANIFEST_PARSED, startPlayback);
-                        hlsInstance.on(Hls.Events.ERROR, (_, data) => {
-                            if (!data || !data.fatal) return;
-                            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                if (isHlsStream(ch.url) && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                    hlsInstance = new Hls({
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                        backBufferLength: 30
+                    });
+                    hlsInstance.loadSource(ch.url);
+                    hlsInstance.attachMedia(videoEl);
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, startPlayback);
+                    hlsInstance.on(Hls.Events.ERROR, (_, errData) => {
+                        if (errData && errData.fatal) {
+                            if (errData.type === Hls.ErrorTypes.NETWORK_ERROR) {
                                 hlsInstance.startLoad();
-                                return;
-                            }
-                            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            } else if (errData.type === Hls.ErrorTypes.MEDIA_ERROR) {
                                 hlsInstance.recoverMediaError();
-                                return;
                             }
-                            if (hlsInstance) {
-                                hlsInstance.destroy();
-                                hlsInstance = null;
-                            }
-                            showTemporaryNotice('Señal interrumpida. Toca otro ícono para cambiar.', 2600);
-                        });
-                    } else {
-                        videoEl.src = ch.url;
-                        videoEl.load();
-                        startPlayback();
-                    }
+                        }
+                    });
                 } else {
                     videoEl.src = ch.url;
+                    videoEl.loop = (cat === '247');
                     videoEl.load();
                     startPlayback();
                 }
@@ -463,93 +478,74 @@
             renderLists();
         }
 
-        function playNextChannel(userInitiated = true) {
+        function playNextChannel(userInitiated = false) {
             if (!channels.length) return;
             playChannelAt((currentIdx + 1) % channels.length, userInitiated);
         }
 
-        function scrollChannelsStrip(dir) {
-            const strip = document.getElementById('viewerChannelIconsGrid');
-            if (!strip) return;
-            strip.scrollBy({ left: dir * 240, behavior: 'smooth' });
-        }
-
         function renderLists() {
-            const iconsGrid = document.getElementById('viewerChannelIconsGrid');
-            const quickCount = document.getElementById('quickChannelsCount');
-            const counterEl = document.getElementById('channelCounterText');
+            Object.keys(CATEGORY_META).forEach((catKey) => {
+                const rowEl = document.getElementById(`row-${catKey}`);
+                const countEl = document.getElementById(`count-${catKey}`);
+                const meta = CATEGORY_META[catKey];
+                const matching = channels
+                    .map((ch, idx) => ({ ch, idx }))
+                    .filter(({ ch }) => classifyChannelCategory(ch) === catKey);
 
-            const filteredEntries = channels
-                .map((ch, idx) => ({ ch, idx }))
-                .filter(({ ch }) => classifyChannelCategory(ch) === currentFilter);
+                if (countEl) countEl.textContent = `${matching.length}`;
+                if (!rowEl) return;
 
-            if (quickCount) {
-                quickCount.textContent = currentFilter === 'peliculas'
-                    ? `${filteredEntries.length} títulos`
-                    : `${filteredEntries.length} canales`;
-            }
-            if (counterEl) {
-                counterEl.textContent = channels.length > 0 ? `${currentIdx + 1} / ${channels.length}` : '0 / 0';
-            }
+                rowEl.innerHTML = '';
+                if (!matching.length) {
+                    rowEl.innerHTML = `
+                        <div class="w-full py-4 px-3 rounded-xl border border-dashed border-slate-800 text-center text-[11px] text-slate-500">
+                            Sin contenido en ${meta.label} todavía
+                        </div>
+                    `;
+                    return;
+                }
 
-            if (!iconsGrid) return;
-            iconsGrid.innerHTML = '';
-
-            if (!filteredEntries.length) {
-                iconsGrid.innerHTML = `
-                    <div class="w-full py-6 px-3 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-400">
-                        ${currentFilter === 'peliculas' ? 'Aún no hay películas o series disponibles.' : 'Esperando canales en vivo...'}
-                    </div>
-                `;
-                return;
-            }
-
-            const frag = document.createDocumentFragment();
-            filteredEntries.forEach(({ ch, idx }) => {
-                const isPlaying = idx === currentIdx && ch.url === currentStreamUrl;
-                const isMovie = classifyChannelCategory(ch) === 'peliculas';
-                const grad = isMovie ? 'from-violet-600 to-indigo-800' : 'from-sky-500 to-blue-700';
-                const iconName = isMovie ? 'fa-film' : 'fa-tv';
-
-                const cardBtn = document.createElement('button');
-                cardBtn.type = 'button';
-                cardBtn.onclick = () => playChannelAt(idx, true);
-                cardBtn.className = `snap-start shrink-0 w-36 sm:w-44 p-2.5 rounded-2xl border text-left flex flex-col items-center justify-center gap-2 transition cursor-pointer ${
-                    isPlaying
-                        ? 'bg-sky-600/25 border-sky-400 text-white font-extrabold shadow-lg ring-1 ring-sky-400/50'
-                        : 'bg-slate-950/90 border-slate-800 text-slate-200 hover:border-sky-500/60 hover:bg-slate-900'
-                }`;
-                cardBtn.innerHTML = `
-                    <span class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${grad} text-white shadow-md">
-                        <i class="fa-solid ${iconName} text-base"></i>
-                    </span>
-                    <div class="w-full text-center min-w-0">
-                        <p class="text-[11px] font-extrabold truncate">${ch.title}</p>
-                        <p class="text-[9px] uppercase tracking-wider mt-0.5 ${
-                            isPlaying ? 'text-emerald-400 font-black' : (isMovie ? 'text-violet-400' : 'text-sky-400')
-                        }">${isPlaying ? '● VIENDO' : (isMovie ? 'PELÍCULAS' : 'TV EN VIVO')}</p>
-                    </div>
-                `;
-                frag.appendChild(cardBtn);
+                const frag = document.createDocumentFragment();
+                matching.slice(0, 150).forEach(({ ch, idx }) => {
+                    const isCurrent = idx === currentIdx;
+                    const card = document.createElement('button');
+                    card.type = 'button';
+                    card.onclick = () => playChannelAt(idx, true);
+                    card.className = `snap-start shrink-0 w-32 sm:w-40 p-2.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition ${
+                        isCurrent
+                            ? 'bg-sky-600/25 border-sky-400 text-white font-extrabold shadow-md'
+                            : 'bg-slate-950/90 border-slate-800 text-slate-200 hover:border-sky-500/60 hover:bg-slate-900'
+                    }`;
+                    card.innerHTML = `
+                        <span class="w-10 h-10 rounded-xl bg-gradient-to-br ${meta.grad} text-white flex items-center justify-center shrink-0 shadow">
+                            <i class="fa-solid ${meta.icon} text-sm"></i>
+                        </span>
+                        <div class="w-full min-w-0">
+                            <p class="text-[11px] font-extrabold truncate">${ch.title}</p>
+                            <p class="text-[9px] uppercase ${isCurrent ? 'text-emerald-400 font-black' : 'text-slate-400'}">
+                                ${isCurrent ? '● Viendo' : meta.label}
+                            </p>
+                        </div>
+                    `;
+                    frag.appendChild(card);
+                });
+                rowEl.appendChild(frag);
             });
-            iconsGrid.appendChild(frag);
         }
 
         function applyIncomingSignal(payload) {
             if (!payload || typeof payload !== 'object') return;
-            const msgTs = Number(payload.timestamp || 0);
+            const ts = Number(payload.timestamp || 0);
+            if (ts && ts <= lastAppliedSignalTimestamp) return;
+            if (ts) lastAppliedSignalTimestamp = ts;
 
-            if (payload.clearAll === true) {
-                clearedAtTimestamp = Math.max(clearedAtTimestamp, msgTs || Date.now());
-                lastAppliedSignalTimestamp = clearedAtTimestamp;
+            if (payload.action === 'clear_all') {
+                clearedAtTimestamp = ts || Date.now();
                 channels = [];
                 currentIdx = 0;
                 currentStreamUrl = '';
-                try {
-                    localStorage.removeItem(VIEWER_STORAGE_KEY);
-                } catch (e) {}
                 if (hlsInstance) {
-                    hlsInstance.destroy();
+                    try { hlsInstance.destroy(); } catch (e) {}
                     hlsInstance = null;
                 }
                 if (videoEl) {
@@ -559,115 +555,129 @@
                 }
                 const titleEl = document.getElementById('currentChannelTitle');
                 if (titleEl) titleEl.textContent = 'Esperando señal del canal...';
+                saveViewerChannels();
                 renderLists();
+                showStatusNotice('Catálogo limpiado desde el panel', 1800);
                 return;
             }
 
-            if (clearedAtTimestamp > 0 && msgTs > 0 && msgTs <= clearedAtTimestamp) return;
-            if (msgTs > 0 && lastAppliedSignalTimestamp > 0 && msgTs < lastAppliedSignalTimestamp && channels.length > 0) {
-                return;
-            }
-            if (msgTs > lastAppliedSignalTimestamp) {
-                lastAppliedSignalTimestamp = msgTs;
-            }
+            if (ts && clearedAtTimestamp && ts < clearedAtTimestamp) return;
 
-            const incomingUrl = String(payload.url || payload.streamUrl || '').trim();
-            const incomingTitle = String(payload.title || '').trim();
-            let updated = false;
-
-            if (Array.isArray(payload.playlist) && payload.playlist.length > 0) {
-                const normalized = payload.playlist
-                    .filter((item) => item && item.url)
-                    .map((item) => ({
-                        title: String(item.title || 'Canal 5'),
-                        url: String(item.url).trim(),
-                        category: classifyChannelCategory(item)
+            if (Array.isArray(payload.channels)) {
+                channels = payload.channels
+                    .filter((c) => c && c.url)
+                    .map((c) => ({
+                        title: String(c.title || 'Canal 5 DNPlus TV'),
+                        url: String(c.url).trim(),
+                        category: classifyChannelCategory(c)
                     }));
-                const prevSig = channels.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
-                const nextSig = normalized.map((c) => `${c.title}|${c.url}|${c.category}`).join(';;');
-                if (normalized.length > 0 && prevSig !== nextSig) {
-                    channels = normalized;
-                    const keptIdx = currentStreamUrl ? channels.findIndex((c) => c.url === currentStreamUrl) : -1;
-                    currentIdx = keptIdx >= 0 ? keptIdx : 0;
-                    updated = true;
-                    saveViewerChannels();
-                    renderLists();
+            } else if (payload.url) {
+                const cleanUrl = String(payload.url).trim();
+                const found = channels.findIndex((c) => c.url === cleanUrl);
+                if (found === -1) {
+                    channels.unshift({
+                        title: String(payload.title || 'Canal 5 DNPlus TV'),
+                        url: cleanUrl,
+                        category: classifyChannelCategory(payload)
+                    });
                 }
             }
 
-            if (incomingUrl) {
-                let idx = channels.findIndex((c) => c.url === incomingUrl);
-                if (idx < 0) {
-                    channels.push({
-                        title: incomingTitle || 'Canal 5 DNPlus TV',
-                        url: incomingUrl,
-                        category: classifyChannelCategory({ title: incomingTitle, url: incomingUrl, category: payload.category })
-                    });
-                    idx = channels.length - 1;
-                    updated = true;
-                    saveViewerChannels();
-                    renderLists();
+            if (channels.length > 0) {
+                const desiredUrl = String(payload.url || currentStreamUrl || '').trim();
+                const matchIdx = channels.findIndex((c) => c.url === desiredUrl);
+                const nextIdx = matchIdx >= 0 ? matchIdx : 0;
+                const shouldSwitch = !currentStreamUrl || (payload.url && payload.url !== currentStreamUrl);
+                saveViewerChannels();
+                renderLists();
+                if (shouldSwitch) {
+                    playChannelAt(nextIdx, false);
                 }
-                if (!currentStreamUrl && channels.length > 0) {
-                    playChannelAt(idx, false);
-                }
-            } else if (updated && channels.length > 0 && !currentStreamUrl) {
-                playChannelAt(0, false);
+                showStatusNotice('Señal actualizada', 1500);
+            } else {
+                saveViewerChannels();
+                renderLists();
             }
-
-            const syncEl = document.getElementById('syncStatusText');
-            if (syncEl && channels.length > 0) {
-                syncEl.textContent = `Señal Activa • ${channels.length} disponibles`;
-                syncEl.className = 'text-[11px] text-emerald-400 font-semibold truncate';
-            }
-        }
-
-        function initMqttSync() {
-            if (typeof mqtt === 'undefined') return;
-            activeMqttClients.forEach((c) => {
-                try { c.end(true); } catch (e) {}
-            });
-            activeMqttClients.length = 0;
-
-            MQTT_BROKERS.forEach((brokerUrl, i) => {
-                try {
-                    const client = mqtt.connect(brokerUrl, {
-                        clientId: `dnplus_viewer_${i}_${Math.random().toString(16).slice(2, 8)}`,
-                        reconnectPeriod: 3500,
-                        connectTimeout: 7000
-                    });
-                    activeMqttClients.push(client);
-                    client.on('connect', () => {
-                        MQTT_TOPICS.forEach((topic) => {
-                            try { client.subscribe(topic, { qos: 1 }); } catch (e) {}
-                        });
-                    });
-                    client.on('message', (_, message) => {
-                        try {
-                            const rawStr = message.toString();
-                            if (rawStr) applyIncomingSignal(JSON.parse(rawStr));
-                        } catch (e) {}
-                    });
-                } catch (e) {}
-            });
         }
 
         function refreshChannelsFromPanel() {
             const icon = document.getElementById('refreshIcon');
             if (icon) icon.classList.add('fa-spin');
-            showTemporaryNotice('Actualizando canales...', 1600);
+            showStatusNotice('Sincronizando con el panel...', 1500);
+
             try {
-                const savedSignal = localStorage.getItem('dnplus_live_signal');
-                if (savedSignal) applyIncomingSignal(JSON.parse(savedSignal));
+                const localSignal = localStorage.getItem('dnplus_live_signal');
+                if (localSignal) applyIncomingSignal(JSON.parse(localSignal));
             } catch (e) {}
-            initMqttSync();
+
+            activeMqttClients.forEach((client) => {
+                if (client && client.connected) {
+                    MQTT_TOPICS.forEach((topic) => {
+                        try {
+                            client.publish('dnplus/canal5/sync_request', JSON.stringify({ request: 'sync', ts: Date.now() }));
+                            client.unsubscribe(topic, () => client.subscribe(topic));
+                        } catch (e) {}
+                    });
+                }
+            });
+
+            if (channels.length > 0) {
+                playChannelAt(currentIdx, false);
+            }
+
             setTimeout(() => {
                 if (icon) icon.classList.remove('fa-spin');
             }, 900);
         }
 
+        function initMqttSync() {
+            if (typeof mqtt === 'undefined') return;
+            const statusText = document.getElementById('syncStatusText');
+
+            MQTT_BROKERS.forEach((brokerUrl) => {
+                try {
+                    const client = mqtt.connect(brokerUrl, {
+                        clientId: 'dnplus_viewer_' + Math.random().toString(16).slice(2, 10),
+                        clean: true,
+                        connectTimeout: 8000,
+                        reconnectPeriod: 4000
+                    });
+
+                    client.on('connect', () => {
+                        if (statusText) statusText.textContent = 'Señal Digital Conectada • 24/7';
+                        MQTT_TOPICS.forEach((t) => client.subscribe(t));
+                        client.publish('dnplus/canal5/sync_request', JSON.stringify({ request: 'sync', ts: Date.now() }));
+                    });
+
+                    client.on('message', (_, message) => {
+                        try {
+                            const parsed = JSON.parse(message.toString());
+                            applyIncomingSignal(parsed);
+                        } catch (e) {}
+                    });
+
+                    activeMqttClients.push(client);
+                } catch (e) {}
+            });
+        }
+
         if (videoEl) {
-            videoEl.addEventListener('volumechange', updateMuteUi);
+            videoEl.addEventListener('ended', () => {
+                const currentItem = channels[currentIdx];
+                if (currentItem && classifyChannelCategory(currentItem) === '247') {
+                    const loopItems = channels
+                        .map((c, idx) => ({ c, idx }))
+                        .filter(({ c }) => classifyChannelCategory(c) === '247');
+                    if (loopItems.length > 1) {
+                        const pos = loopItems.findIndex((x) => x.idx === currentIdx);
+                        const nextObj = loopItems[(pos + 1) % loopItems.length];
+                        playChannelAt(nextObj.idx, false);
+                    } else {
+                        videoEl.currentTime = 0;
+                        videoEl.play().catch(() => {});
+                    }
+                }
+            });
         }
 
         window.addEventListener('storage', (e) => {
