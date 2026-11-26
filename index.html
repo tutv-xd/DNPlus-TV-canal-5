@@ -98,6 +98,24 @@
                     <span id="activeCategoryBadge" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 uppercase">TV EN VIVO</span>
                 </div>
 
+                <!-- Pantalla de Espera (Fondo rojo sólido con gris en medio antes de reproducir) -->
+                <div id="standbyPosterScreen" class="absolute inset-0 z-10 bg-red-700 flex items-center justify-center p-4 text-center">
+                    <div class="w-full max-w-md bg-slate-800/95 border-2 border-slate-500/60 rounded-2xl px-4 py-4 sm:py-5 shadow-2xl flex flex-col items-center gap-1.5">
+                        <span class="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">
+                            Señal Oficial • Caaguazú
+                        </span>
+                        <h3 class="text-base sm:text-xl font-black text-white tracking-tight">
+                            DNPlus TV canal 5
+                        </h3>
+                        <p class="text-xs sm:text-sm font-bold text-slate-200">
+                            Transmite de <span class="text-amber-300 font-black">6:30</span> hasta las <span class="text-amber-300 font-black">10:00 de la noche</span>
+                        </p>
+                        <p class="text-[11px] text-slate-300 mt-0.5">
+                            Selecciona un canal o contenido abajo para iniciar la reproducción
+                        </p>
+                    </div>
+                </div>
+
                 <div id="statusOverlay" class="hidden absolute inset-x-4 top-14 z-30 bg-slate-950/90 border border-sky-500/40 text-sky-200 px-3.5 py-2 rounded-2xl text-xs font-bold text-center shadow-lg">
                     <span id="statusOverlayText">Sincronizando señal...</span>
                 </div>
@@ -107,8 +125,16 @@
                     class="w-full h-full object-contain bg-black"
                     autoplay
                     playsinline
+                    preload="auto"
                     controlsList="nodownload noplaybackrate"
                 ></video>
+
+                <iframe
+                    id="viewerWebFrame"
+                    class="hidden w-full h-full border-0 bg-black"
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                    allowfullscreen
+                ></iframe>
 
                 <button
                     type="button"
@@ -244,13 +270,69 @@
                 <div id="row-247" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
             </section>
 
+            <!-- Fila 6: MÚSICA -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-fuchsia-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-music"></i> Música
+                    </h3>
+                    <span id="count-musica" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-musica" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Fila 7: CULTURA -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-teal-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-landmark"></i> Cultura
+                    </h3>
+                    <span id="count-cultura" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-cultura" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Fila 8: ANIMADOS -->
+            <section class="bg-[#0a1329] border border-blue-900/70 rounded-2xl p-3 flex flex-col gap-2 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-wand-sparkles"></i> Animados
+                    </h3>
+                    <span id="count-animados" class="text-[11px] font-mono text-slate-400">0</span>
+                </div>
+                <div id="row-animados" class="flex gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-1"></div>
+            </section>
+
+            <!-- Banner Publicitario Contrataciones -->
+            <section class="bg-gradient-to-r from-red-900/80 via-slate-900 to-emerald-950/80 border border-emerald-500/40 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-lg text-center sm:text-left">
+                <div>
+                    <p class="text-[10px] font-black text-amber-300 uppercase tracking-wider">Eventos y Fiestas en Vivo</p>
+                    <p class="text-xs sm:text-sm font-black text-white">
+                        Contratas: <span class="text-emerald-300">David Y Su Grupo Tropical</span>
+                    </p>
+                </div>
+                <a
+                    href="https://wa.me/595992536184?text=Hola!%20Quiero%20consultar%20para%20contratar%20a%20David%20Y%20Su%20Grupo%20Tropical"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shrink-0 transition shadow"
+                >
+                    <i class="fa-brands fa-whatsapp text-base"></i>
+                    <span>WhatsApp 0992536184</span>
+                </a>
+            </section>
+
         </div>
 
     </main>
 
     <!-- Pie de Página -->
-    <footer class="bg-[#07122b] border-t border-blue-950 py-3 text-center text-xs text-slate-400">
-        &copy; 2026 Canal 5 DNPlus TV • Emisión Continua 24/7
+    <footer class="bg-[#07122b] border-t border-blue-950 py-3 px-4 text-center text-xs text-slate-400 flex flex-col gap-1">
+        <p class="text-slate-200 font-bold">
+            Contratas <span class="text-emerald-400 font-black">David Y Su Grupo Tropical</span> al WhatsApp
+            <a href="https://wa.me/595992536184" target="_blank" rel="noopener noreferrer" class="text-emerald-300 underline font-black">0992536184</a>
+        </p>
+        <p>&copy; 2026 Canal 5 DNPlus TV • Emisión Continua 24/7</p>
     </footer>
 
     <script>
@@ -277,6 +359,8 @@
         let isCssFull = false;
         const activeMqttClients = [];
         const videoEl = document.getElementById('viewerVideo');
+        const webFrameEl = document.getElementById('viewerWebFrame');
+        const standbyEl = document.getElementById('standbyPosterScreen');
         const monitorEl = document.getElementById('tvMonitorBox');
 
         const CATEGORY_META = {
@@ -284,8 +368,20 @@
             peliculas: { label: 'PELÍCULAS', icon: 'fa-film', grad: 'from-violet-600 to-indigo-800', text: 'text-violet-400' },
             deportes: { label: 'DEPORTES', icon: 'fa-futbol', grad: 'from-emerald-500 to-teal-700', text: 'text-emerald-400' },
             novelas: { label: 'NOVELAS', icon: 'fa-heart', grad: 'from-rose-500 to-pink-700', text: 'text-rose-400' },
-            '247': { label: 'TV 24/7', icon: 'fa-infinity', grad: 'from-amber-500 to-orange-700', text: 'text-amber-400' }
+            '247': { label: 'TV 24/7', icon: 'fa-infinity', grad: 'from-amber-500 to-orange-700', text: 'text-amber-400' },
+            musica: { label: 'MÚSICA', icon: 'fa-music', grad: 'from-fuchsia-500 to-purple-700', text: 'text-fuchsia-400' },
+            cultura: { label: 'CULTURA', icon: 'fa-landmark', grad: 'from-teal-500 to-cyan-700', text: 'text-teal-400' },
+            animados: { label: 'ANIMADOS', icon: 'fa-wand-sparkles', grad: 'from-orange-500 to-red-700', text: 'text-orange-400' }
         };
+
+        function showStandbyScreen(show) {
+            if (!standbyEl) return;
+            if (show) {
+                standbyEl.classList.remove('hidden');
+            } else {
+                standbyEl.classList.add('hidden');
+            }
+        }
 
         function showStatusNotice(msg, ms = 2000) {
             const box = document.getElementById('statusOverlay');
@@ -300,14 +396,27 @@
         }
 
         function classifyChannelCategory(item) {
-            const validCats = ['tv', 'peliculas', 'deportes', 'novelas', '247'];
+            const validCats = ['tv', 'peliculas', 'deportes', 'novelas', '247', 'musica', 'cultura', 'animados'];
             if (item && validCats.includes(item.category)) return item.category;
             const url = String(item?.url || '').trim();
-            return /\.(mp4|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
+            return /\.(mp4|mpg|mpeg|mkv|avi|webm|m4v)(\?|$)/i.test(url) ? 'peliculas' : 'tv';
         }
 
         function isHlsStream(url) {
             return /\.m3u8(\?|$)/i.test(String(url || '').trim());
+        }
+
+        function isDirectVideoFile(url) {
+            return /\.(mp4|mpg|mpeg|webm|ogg|m4v|mov)(\?|$)/i.test(String(url || '').trim());
+        }
+
+        function toEmbeddablePageUrl(rawUrl) {
+            const u = String(rawUrl || '').trim();
+            const ytMatch = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{6,})/);
+            if (ytMatch) {
+                return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`;
+            }
+            return u;
         }
 
         function saveViewerChannels() {
@@ -433,7 +542,31 @@
                 hlsInstance = null;
             }
 
+            showStandbyScreen(false);
+            const cleanUrl = String(ch.url || '').trim();
+            const useWebFrame = !isHlsStream(cleanUrl) && !isDirectVideoFile(cleanUrl);
+
+            if (useWebFrame) {
+                if (videoEl) {
+                    videoEl.pause();
+                    videoEl.removeAttribute('src');
+                    videoEl.classList.add('hidden');
+                }
+                if (webFrameEl) {
+                    webFrameEl.src = toEmbeddablePageUrl(cleanUrl);
+                    webFrameEl.classList.remove('hidden');
+                }
+                renderLists();
+                return;
+            }
+
+            if (webFrameEl) {
+                webFrameEl.src = 'about:blank';
+                webFrameEl.classList.add('hidden');
+            }
+
             if (videoEl) {
+                videoEl.classList.remove('hidden');
                 videoEl.pause();
                 videoEl.removeAttribute('src');
                 videoEl.load();
@@ -449,13 +582,14 @@
                     });
                 };
 
-                if (isHlsStream(ch.url) && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                if (isHlsStream(cleanUrl) && typeof Hls !== 'undefined' && Hls.isSupported()) {
                     hlsInstance = new Hls({
                         enableWorker: true,
                         lowLatencyMode: true,
-                        backBufferLength: 30
+                        maxBufferLength: 15,
+                        backBufferLength: 15
                     });
-                    hlsInstance.loadSource(ch.url);
+                    hlsInstance.loadSource(cleanUrl);
                     hlsInstance.attachMedia(videoEl);
                     hlsInstance.on(Hls.Events.MANIFEST_PARSED, startPlayback);
                     hlsInstance.on(Hls.Events.ERROR, (_, errData) => {
@@ -468,7 +602,7 @@
                         }
                     });
                 } else {
-                    videoEl.src = ch.url;
+                    videoEl.src = cleanUrl;
                     videoEl.loop = (cat === '247');
                     videoEl.load();
                     startPlayback();
@@ -551,8 +685,14 @@
                 if (videoEl) {
                     videoEl.pause();
                     videoEl.removeAttribute('src');
+                    videoEl.classList.remove('hidden');
                     videoEl.load();
                 }
+                if (webFrameEl) {
+                    webFrameEl.src = 'about:blank';
+                    webFrameEl.classList.add('hidden');
+                }
+                showStandbyScreen(true);
                 const titleEl = document.getElementById('currentChannelTitle');
                 if (titleEl) titleEl.textContent = 'Esperando señal del canal...';
                 saveViewerChannels();
@@ -691,6 +831,8 @@
             renderLists();
             if (channels.length > 0) {
                 playChannelAt(currentIdx, false);
+            } else {
+                showStandbyScreen(true);
             }
             initMqttSync();
             try {
