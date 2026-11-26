@@ -168,6 +168,18 @@
                         <span id="fsLabel" class="text-[11px] font-black uppercase">TV</span>
                     </button>
                 </div>
+
+                <!-- Botón Flotante Volver Atrás en Pantalla TV -->
+                <button
+                    type="button"
+                    id="btnTvBackOverlay"
+                    onclick="goBackFromTv()"
+                    aria-label="Volver atrás para cambiar de canal"
+                    class="hidden absolute bottom-3 left-3 z-20 h-10 px-3.5 rounded-2xl bg-slate-950/90 hover:bg-amber-500 text-white hover:text-slate-950 border border-white/20 flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer"
+                >
+                    <i class="fa-solid fa-arrow-left text-sm"></i>
+                    <span class="text-[11px] font-black uppercase">Volver / Cambiar Canal</span>
+                </button>
             </section>
 
             <!-- Barra de Canal Actual y Refrescar (Fija debajo del reproductor) -->
@@ -183,6 +195,14 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        onclick="goBackFromTv()"
+                        class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow"
+                    >
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Volver</span>
+                    </button>
                     <button
                         type="button"
                         id="btnRefreshViewers"
@@ -351,12 +371,14 @@
 
         let channels = [];
         let currentIdx = 0;
+        let channelHistory = [];
         let currentStreamUrl = '';
         let lastAppliedSignalTimestamp = 0;
         let clearedAtTimestamp = 0;
         let hlsInstance = null;
         let noticeTimeout = null;
         let isCssFull = false;
+        let audioUnlocked = false;
         const activeMqttClients = [];
         const videoEl = document.getElementById('viewerVideo');
         const webFrameEl = document.getElementById('viewerWebFrame');
@@ -471,12 +493,57 @@
         }
 
         function enableAudioNow() {
+            audioUnlocked = true;
             if (!videoEl) return;
             videoEl.muted = false;
             videoEl.volume = 1;
             videoEl.play().catch(() => {});
             updateMuteUi();
             showStatusNotice('Audio activado', 1400);
+        }
+
+        function unlockAudioSilently() {
+            if (audioUnlocked) return;
+            audioUnlocked = true;
+            if (videoEl && videoEl.muted) {
+                videoEl.muted = false;
+                videoEl.volume = 1;
+                videoEl.play().then(() => updateMuteUi()).catch(() => {});
+            }
+        }
+
+        function goBackFromTv() {
+            const isNativeFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+            const backOverlay = document.getElementById('btnTvBackOverlay');
+            const fsIcon = document.getElementById('fsIcon');
+            const fsLabel = document.getElementById('fsLabel');
+
+            if (isNativeFs || isCssFull) {
+                if (isNativeFs) {
+                    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                }
+                isCssFull = false;
+                if (monitorEl) monitorEl.classList.remove('tv-expanded-fs');
+                if (backOverlay) backOverlay.classList.add('hidden');
+                if (fsIcon) fsIcon.className = 'fa-solid fa-expand text-white text-sm';
+                if (fsLabel) fsLabel.textContent = 'TV';
+                const catsEl = document.getElementById('viewerCategoriesContainer');
+                if (catsEl) catsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showStatusNotice('Elige un canal abajo', 1500);
+                return;
+            }
+
+            if (channelHistory.length > 0) {
+                const prevIdx = channelHistory.pop();
+                playChannelAt(prevIdx, true, true);
+                showStatusNotice('Volviendo al canal anterior', 1400);
+            } else if (channels.length > 1) {
+                playChannelAt((currentIdx - 1 + channels.length) % channels.length, true, true);
+            } else {
+                const catsEl = document.getElementById('viewerCategoriesContainer');
+                if (catsEl) catsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function toggleMute() {
@@ -493,6 +560,7 @@
             if (!monitorEl) return;
             const fsIcon = document.getElementById('fsIcon');
             const fsLabel = document.getElementById('fsLabel');
+            const backOverlay = document.getElementById('btnTvBackOverlay');
             const isNativeFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
 
             if (!isNativeFs && !isCssFull) {
@@ -507,6 +575,7 @@
                     isCssFull = true;
                     monitorEl.classList.add('tv-expanded-fs');
                 }
+                if (backOverlay) backOverlay.classList.remove('hidden');
                 if (fsIcon) fsIcon.className = 'fa-solid fa-compress text-white text-sm';
                 if (fsLabel) fsLabel.textContent = 'Salir';
             } else {
@@ -516,19 +585,28 @@
                 }
                 isCssFull = false;
                 monitorEl.classList.remove('tv-expanded-fs');
+                if (backOverlay) backOverlay.classList.add('hidden');
                 if (fsIcon) fsIcon.className = 'fa-solid fa-expand text-white text-sm';
                 if (fsLabel) fsLabel.textContent = 'TV';
             }
         }
 
-        function playChannelAt(index, userInitiated = false) {
+        function playChannelAt(index, userInitiated = false, skipHistory = false) {
             if (!channels.length) return;
-            currentIdx = ((index % channels.length) + channels.length) % channels.length;
+            const nextIndex = ((index % channels.length) + channels.length) % channels.length;
+            if (!skipHistory && currentStreamUrl && nextIndex !== currentIdx) {
+                channelHistory.push(currentIdx);
+                if (channelHistory.length > 20) channelHistory.shift();
+            }
+            currentIdx = nextIndex;
             const ch = channels[currentIdx];
             const cat = classifyChannelCategory(ch);
             const meta = CATEGORY_META[cat] || CATEGORY_META.tv;
             currentStreamUrl = ch.url;
             saveViewerChannels();
+            if (userInitiated) audioUnlocked = true;
+            const backOverlay = document.getElementById('btnTvBackOverlay');
+            if (backOverlay) backOverlay.classList.remove('hidden');
 
             const titleEl = document.getElementById('currentChannelTitle');
             const counterEl = document.getElementById('channelCounterText');
@@ -570,15 +648,26 @@
                 videoEl.pause();
                 videoEl.removeAttribute('src');
                 videoEl.load();
-                videoEl.muted = !userInitiated;
+                videoEl.muted = false;
+                videoEl.volume = 1;
 
                 const startPlayback = () => {
+                    videoEl.muted = false;
+                    videoEl.volume = 1;
                     videoEl.play().then(() => {
+                        audioUnlocked = true;
                         updateMuteUi();
                     }).catch(() => {
                         videoEl.muted = true;
-                        videoEl.play().catch(() => {});
-                        updateMuteUi();
+                        videoEl.play().then(() => {
+                            if (audioUnlocked) {
+                                videoEl.muted = false;
+                                videoEl.volume = 1;
+                            }
+                            updateMuteUi();
+                        }).catch(() => {
+                            updateMuteUi();
+                        });
                     });
                 };
 
@@ -823,6 +912,20 @@
         window.addEventListener('storage', (e) => {
             if (e.key === 'dnplus_live_signal' && e.newValue) {
                 try { applyIncomingSignal(JSON.parse(e.newValue)); } catch (err) {}
+            }
+        });
+
+        ['pointerdown', 'touchstart', 'click', 'keydown'].forEach((evtName) => {
+            window.addEventListener(evtName, unlockAudioSilently, { passive: true });
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+            const fsIcon = document.getElementById('fsIcon');
+            const fsLabel = document.getElementById('fsLabel');
+            if (!isFs && !isCssFull) {
+                if (fsIcon) fsIcon.className = 'fa-solid fa-expand text-white text-sm';
+                if (fsLabel) fsLabel.textContent = 'TV';
             }
         });
 
