@@ -1,1224 +1,814 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Canal 5 DNPlus TV — Señal Digital Conectada • 24/7</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-          },
-          colors: {
-            dn: {
-              bg: '#06152d',
-              header: '#0a2246',
-              panel: '#081b38',
-              card: '#0d2852',
-              border: '#19437d',
-              cyan: '#06b6d4',
-              cyanHover: '#0891b2',
-              wa: '#16a34a',
-              waHover: '#15803d',
-            },
-          },
-        },
-      },
-    };
-  </script>
-  <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      background: radial-gradient(circle at top, #0b264f 0%, #051226 65%, #030b18 100%);
-      color: #f8fafc;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      overflow-x: hidden;
-    }
-
-    /* Pantalla completa nativa del reproductor */
-    #player-container:fullscreen,
-    #player-container:-webkit-full-screen {
-      width: 100vw !important;
-      height: 100vh !important;
-      max-width: none !important;
-      max-height: none !important;
-      border-radius: 0 !important;
-      border: none !important;
-      background: #000 !important;
-    }
-
-    /* Modo Pantalla Llena / Smart TV dentro de la vista previa */
-    body.tv-fill-mode .app-chrome {
-      display: none !important;
-    }
-
-    body.tv-fill-mode #app-wrapper {
-      max-width: 100% !important;
-      padding: 0 !important;
-    }
-
-    body.tv-fill-mode #player-shell {
-      padding: 0 !important;
-      border: none !important;
-      border-radius: 0 !important;
-      background: #000 !important;
-    }
-
-    body.tv-fill-mode #player-container {
-      height: 100dvh !important;
-      max-height: 100dvh !important;
-      aspect-ratio: auto !important;
-      border-radius: 0 !important;
-      border: none !important;
-    }
-
-    /* Carruseles horizontales limpios y fluidos */
-    .carousel-row {
-      display: flex;
-      gap: 0.75rem;
-      overflow-x: auto;
-      scroll-behavior: smooth;
-      padding-bottom: 0.35rem;
-      scrollbar-width: thin;
-      scrollbar-color: #1e4b8f #071934;
-    }
-
-    .carousel-row::-webkit-scrollbar {
-      height: 6px;
-    }
-
-    .carousel-row::-webkit-scrollbar-track {
-      background: #071934;
-      border-radius: 9999px;
-    }
-
-    .carousel-row::-webkit-scrollbar-thumb {
-      background: #1e4b8f;
-      border-radius: 9999px;
-    }
-
-    /* Foco visible para control remoto de Smart TV / TV Box */
-    .tv-focusable:focus-visible {
-      outline: 3px solid #22d3ee;
-      outline-offset: 2px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canal 5 DNPlus TV • Google Sites</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- MQTT.js -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f8fafc;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        #siteMonitorBox.site-tv-fs {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            aspect-ratio: auto !important;
+            border-radius: 0 !important;
+            border: none !important;
+            z-index: 2147483647 !important;
+            background-color: #000000 !important;
+        }
+        #siteMonitorBox.site-tv-fs.site-tv-rotated {
+            width: 100vh !important;
+            height: 100vw !important;
+            top: 50% !important;
+            left: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: translate(-50%, -50%) rotate(90deg) !important;
+            transform-origin: center center !important;
+        }
+        @keyframes disneySpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .disney-loader-ring {
+            width: 52px;
+            height: 52px;
+            border-radius: 9999px;
+            background: conic-gradient(from 0deg, transparent 0%, transparent 50%, #38bdf8 80%, #ffffff 100%);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4.5px), #000 calc(100% - 4px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 4.5px), #000 calc(100% - 4px));
+            animation: disneySpin 0.85s linear infinite;
+            box-shadow: 0 0 24px rgba(56, 189, 248, 0.65);
+        }
+        #siteVideo {
+            background-color: #162238 !important;
+        }
+        #siteVideo::-webkit-media-controls-start-playback-button,
+        #siteVideo::-webkit-media-controls-overlay-play-button {
+            display: none !important;
+            -webkit-appearance: none !important;
+            opacity: 0 !important;
+        }
+        #siteBottomControls button {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+    </style>
 </head>
-<body class="antialiased selection:bg-cyan-500 selection:text-slate-950">
-  <div id="app-wrapper" class="min-h-screen w-full max-w-[1440px] mx-auto px-2.5 sm:px-4 lg:px-6 py-2.5 sm:py-3.5 flex flex-col gap-3">
+<body class="min-h-screen bg-[#030712] text-slate-100 p-2.5 sm:p-4 flex flex-col gap-2.5 selection:bg-sky-500 selection:text-white">
 
-    <!-- ENCABEZADO AZUL OSCURO EXACTO DE CANAL 5 DNPLUS TV -->
-    <header class="app-chrome bg-gradient-to-r from-[#0a2348] via-[#0c2b57] to-[#092042] border border-[#1d4d8f] rounded-2xl px-3 sm:px-4 py-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.45)] flex flex-wrap items-center justify-between gap-2.5">
-      <!-- Izquierda: Logo DNPlus TV + Título Canal 5 DNPlus TV + Subtítulo -->
-      <div class="flex items-center gap-3 min-w-0">
-        <!-- Logo Oficial DNPlus TV -->
-        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white p-1 shadow-md border border-cyan-300/40 flex items-center justify-center shrink-0">
-          <svg class="w-full h-full" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Logo DNPlus TV">
-            <rect x="4" y="8" width="56" height="40" rx="8" fill="#0B254D" stroke="#06B6D4" stroke-width="3" />
-            <rect x="22" y="51" width="20" height="4" rx="2" fill="#0B254D" />
-            <path d="M30 48H34V52H30V48Z" fill="#06B6D4" />
-            <text x="12" y="31" fill="#FFFFFF" font-family="Inter, sans-serif" font-weight="900" font-size="16">DN</text>
-            <text x="36" y="31" fill="#22D3EE" font-family="Inter, sans-serif" font-weight="800" font-size="12">TV</text>
-            <rect x="12" y="36" width="40" height="4" rx="2" fill="#DC2626" />
-          </svg>
+    <!-- Barra Superior Compacta -->
+    <header class="sticky top-0 z-30 bg-[#07122b]/95 backdrop-blur-md border border-blue-900/70 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 shadow-md">
+        <div class="flex items-center gap-2 min-w-0">
+            <div class="w-7 h-7 rounded-lg bg-white/10 border border-white/15 p-0.5 flex items-center justify-center shrink-0">
+                <img
+                    src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg"
+                    alt="Logo Canal 5 DNPlus TV"
+                    onerror="this.onerror=null;this.src='https://placehold.co/80x80/0f172a/38bdf8?text=DN5';"
+                    class="w-full h-full object-contain rounded-md"
+                >
+            </div>
+            <div class="min-w-0">
+                <h1 class="text-xs sm:text-sm font-black text-white truncate leading-tight">
+                    Canal 5 <span class="text-sky-400">DNPlus TV</span>
+                </h1>
+                <p id="mqttStatusText" class="text-[10px] text-emerald-400 font-semibold truncate leading-tight">
+                    Señal Digital • 24/7
+                </p>
+            </div>
         </div>
 
-        <div class="min-w-0">
-          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <h1 class="text-base sm:text-lg md:text-xl font-extrabold tracking-tight text-white leading-tight">
-              Canal 5 <span class="text-cyan-400">DNPlus TV</span>
-            </h1>
-            <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-400/30">
-              HD DIGITAL
-            </span>
-          </div>
-          <p class="text-xs sm:text-[13px] font-medium text-cyan-200/90 truncate">
-            Señal Digital Conectada • 24/7
-          </p>
+        <div class="flex items-center gap-1 shrink-0">
+            <button
+                type="button"
+                onclick="refreshSiteFromPanel()"
+                class="bg-sky-600 hover:bg-sky-500 text-white font-extrabold px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1 cursor-pointer transition"
+            >
+                <i id="siteRefreshIcon" class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                <span>Actualizar</span>
+            </button>
+            <a
+                href="https://wa.me/595992536184?text=Hola%20Canal%205%20DNPlus%20TV,%20los%20estoy%20viendo%20en%20Google%20Sites!"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-2 py-1 rounded-lg text-[11px] flex items-center transition"
+            >
+                <i class="fa-brands fa-whatsapp text-xs"></i>
+            </a>
         </div>
-      </div>
-
-      <!-- Derecha: Botón Cian 'Actualizar' + Botón Verde de WhatsApp + Controles TV/Prueba -->
-      <div class="flex items-center gap-2 ml-auto">
-        <!-- Botón Cian Actualizar (única recarga manual) -->
-        <button
-          id="btn-actualizar-header"
-          type="button"
-          class="tv-focusable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-cyan-500 hover:bg-cyan-400 active:scale-[0.98] text-slate-950 shadow-md transition cursor-pointer"
-          title="Actualizar señal manualmente"
-        >
-          <svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>Actualizar</span>
-        </button>
-
-        <!-- Botón Verde de WhatsApp al lado -->
-        <a
-          href="https://wa.me/595981000000?text=Hola%20DNPlus%20TV%20Canal%205,%20me%20comunico%20desde%20la%20app%20de%20espectadores."
-          target="_blank"
-          rel="noopener noreferrer"
-          class="tv-focusable inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white shadow-md transition"
-          title="Contactar por WhatsApp"
-          aria-label="Contactar por WhatsApp"
-        >
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M20.52 3.48A11.86 11.86 0 0012.07 0C5.5 0 .16 5.34.16 11.91c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 005.74 1.46h.01c6.57 0 11.91-5.34 11.91-11.91 0-3.18-1.24-6.17-3.47-8.41zM12.08 21.79h-.01a9.87 9.87 0 01-5.03-1.38l-.36-.21-3.76.99 1-3.66-.24-.38a9.86 9.86 0 01-1.51-5.24c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 012.89 7c0 5.45-4.44 9.88-9.87 9.88zm5.43-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z" />
-          </svg>
-        </a>
-
-        <!-- Botón Pantalla Llena TV (para probar modo pantalla completa en TV / WebIntoApp) -->
-        <button
-          id="btn-tv-fill-toggle"
-          type="button"
-          class="tv-focusable hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0f3366] hover:bg-[#154485] text-cyan-200 border border-cyan-500/30 transition cursor-pointer"
-          title="Alternar modo pantalla llena para Smart TV"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span>Modo TV Lleno</span>
-        </button>
-
-        <!-- Botón desplegable de Pruebas de Señal / Espera -->
-        <button
-          id="btn-toggle-tools"
-          type="button"
-          class="tv-focusable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#071934] hover:bg-[#0e2a54] text-slate-200 border border-[#1d4d8f] transition cursor-pointer"
-          title="Probar estado fuera de horario o enlace .m3u8"
-        >
-          <span>Opciones</span>
-        </button>
-      </div>
     </header>
 
-    <!-- PANEL OPCIONAL DE PRUEBA DE SEÑAL / FUERA DE HORARIO (OCULTO POR DEFECTO) -->
-    <section
-      id="tools-panel"
-      class="app-chrome hidden bg-[#091f40] border border-[#1d4d8f] rounded-2xl p-3.5 shadow-xl"
-    >
-      <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-[#173e75]">
-        <div>
-          <h2 class="text-xs sm:text-sm font-bold text-white">Control de Señal y Pruebas — DNPlus TV</h2>
-          <p class="text-[11px] sm:text-xs text-cyan-200/80">
-            Prueba enlaces <code class="text-cyan-300">.m3u8</code> / <code class="text-cyan-300">.mp4</code>, activa la pantalla fuera de horario o expande a pantalla llena.
-          </p>
-        </div>
-        <button
-          id="btn-close-tools"
-          type="button"
-          class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#0e2d5c] hover:bg-[#153e7a] text-cyan-200 cursor-pointer"
-        >
-          Cerrar
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-end">
-        <div class="lg:col-span-4 flex flex-wrap gap-2">
-          <button
-            id="btn-state-live"
-            type="button"
-            class="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
-          >
-            Señal Activa
-          </button>
-          <button
-            id="btn-state-offline"
-            type="button"
-            class="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-red-700 hover:bg-red-600 text-white cursor-pointer"
-          >
-            Fuera de Horario
-          </button>
-        </div>
-
-        <div class="lg:col-span-5">
-          <label for="input-stream-url" class="block text-[11px] font-semibold text-cyan-200 mb-1">
-            Probar URL directa (.m3u8 HLS o .mp4)
-          </label>
-          <input
-            id="input-stream-url"
-            type="url"
-            placeholder="https://servidor.com/canal5/index.m3u8"
-            class="w-full px-3 py-2 rounded-xl text-xs bg-[#041022] border border-[#1d4d8f] focus:border-cyan-400 focus:outline-none text-white placeholder-slate-500"
-          />
-        </div>
-
-        <div class="lg:col-span-3 flex gap-2">
-          <button
-            id="btn-load-custom-url"
-            type="button"
-            class="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 cursor-pointer"
-          >
-            Cargar URL
-          </button>
-          <button
-            id="btn-tv-fill-mobile"
-            type="button"
-            class="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[#11376e] hover:bg-[#17488f] text-white cursor-pointer"
-          >
-            Pantalla Llena
-          </button>
-        </div>
-      </div>
-
-      <p id="tools-status-msg" class="mt-2.5 text-xs text-cyan-200 bg-[#05142b] border border-[#143769] rounded-xl px-3 py-2">
-        Estado: Reproduciendo señal digital en vivo. Sin recarga automática activa.
-      </p>
-    </section>
-
-    <!-- REPRODUCTOR PRINCIPAL ARRIBA (ESTILO EXACTO DE CANAL 5 DNPLUS TV) -->
-    <section id="player-shell" class="bg-[#081d3d] border border-[#1b4987] rounded-2xl p-2 sm:p-2.5 shadow-[0_14px_35px_rgba(0,0,0,0.55)]">
-      <div
-        id="player-container"
-        class="relative w-full aspect-video max-h-[68vh] bg-black rounded-xl overflow-hidden border border-[#2359a3] flex items-center justify-center select-none"
-      >
-        <!-- Video HTML5 con soporte HLS (.m3u8) y MP4 -->
-        <video
-          id="main-video"
-          class="w-full h-full object-contain bg-black"
-          playsinline
-          webkit-playsinline="true"
-          controls
-          preload="metadata"
-        ></video>
-
-        <!-- SUPERPOSICIÓN SUPERIOR IZQUIERDA: [Punto Rojo + CH 01] + Nombre del Canal + [TV EN VIVO] -->
-        <div class="pointer-events-none absolute top-2.5 left-2.5 sm:top-3.5 sm:left-3.5 z-20 flex items-center gap-1.5 sm:gap-2 bg-[#071936]/90 backdrop-blur-md border border-cyan-400/30 rounded-full px-2.5 sm:px-3.5 py-1 sm:py-1.5 shadow-lg max-w-[70%]">
-          <!-- Punto rojo de transmisión -->
-          <span id="osd-live-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0"></span>
-
-          <!-- Etiqueta Cian/Roja CH 01 -->
-          <span
-            id="osd-channel-code"
-            class="px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-extrabold tracking-wider bg-cyan-500 text-slate-950 shrink-0"
-          >
-            CH 01
-          </span>
-
-          <!-- Nombre del canal o programa activo -->
-          <span
-            id="osd-channel-name"
-            class="text-xs sm:text-sm font-extrabold text-white truncate"
-          >
-            Canal 5 DNPlus TV
-          </span>
-
-          <!-- Insignia TV EN VIVO -->
-          <span
-            id="osd-live-badge"
-            class="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold tracking-wide bg-red-600 text-white shrink-0"
-          >
-            TV EN VIVO
-          </span>
-        </div>
-
-        <!-- SUPERPOSICIÓN SUPERIOR DERECHA: Marca de agua 'DNPlus TV' + Botón Pantalla Completa -->
-        <div class="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-30 flex items-center gap-2">
-          <!-- Marca de agua DNPlus TV -->
-          <div class="pointer-events-none hidden xs:flex sm:flex items-center gap-1.5 bg-[#071936]/85 backdrop-blur-md border border-white/15 rounded-xl px-2.5 py-1.5 shadow-md">
-            <span class="w-5 h-5 rounded-md bg-white text-[#071936] font-black text-[10px] flex items-center justify-center">
-              DN
-            </span>
-            <span class="text-xs font-extrabold tracking-tight text-white">
-              DNPlus <span class="text-cyan-400">TV</span>
-            </span>
-          </div>
-
-          <!-- Botón Pantalla Completa -->
-          <button
-            id="btn-fullscreen"
-            type="button"
-            class="tv-focusable inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-[#071936]/90 hover:bg-cyan-500 hover:text-slate-950 text-white border border-cyan-400/35 backdrop-blur-md shadow-lg transition cursor-pointer"
-            title="Pantalla completa"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-            <span id="fullscreen-btn-text" class="hidden sm:inline">Pantalla Completa</span>
-          </button>
-        </div>
-
-        <!-- PANTALLA DE ESPERA / FUERA DE HORARIO (FONDO ROJO SÓLIDO + CUADRO GRIS CENTRAL + HORARIO) -->
-        <div
-          id="offline-screen"
-          class="hidden absolute inset-0 z-20 bg-[#991b1b] flex items-center justify-center p-4 sm:p-6"
-          role="status"
-          aria-live="polite"
-        >
-          <div class="w-full max-w-md bg-[#404040] border border-neutral-400/40 rounded-2xl p-5 sm:p-7 text-center shadow-2xl">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-800 text-neutral-200 text-xs font-bold mb-3">
-              <span class="w-2 h-2 rounded-full bg-red-500"></span>
-              <span>SEÑAL EN ESPERA • CANAL 5 DNPLUS TV</span>
+    <!-- Reproductor Principal Estático -->
+    <section id="sitePlayerDock" class="sticky top-[44px] z-20 bg-[#0a1329] border border-blue-900/70 rounded-2xl p-2 flex flex-col gap-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
+        <div id="siteMonitorBox" class="relative w-full aspect-video bg-[#162238] rounded-xl overflow-hidden border border-sky-500/35 flex items-center justify-center">
+            <!-- Nombre del Canal Visible en Pantalla al Cambiar -->
+            <div id="siteChannelBanner" class="absolute top-3 left-3.5 sm:top-4 sm:left-5 z-20 flex items-center gap-1.5 bg-slate-950/90 border border-sky-400/50 px-2.5 py-1 rounded-lg shadow-lg pointer-events-none max-w-[56%] transition-all duration-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping shrink-0"></span>
+                <span id="siteCornerChannelNum" class="px-1.5 py-0.5 rounded bg-sky-600 text-white text-[9px] font-black font-mono shrink-0">CH 01</span>
+                <span id="siteCornerChannelName" class="text-[11px] sm:text-xs font-black text-white truncate">DNPlus TV Canal 5</span>
+                <span id="siteCatBadge" class="hidden sm:inline text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 uppercase shrink-0">TV EN VIVO</span>
             </div>
 
-            <h2 id="offline-title" class="text-lg sm:text-xl font-extrabold text-white">
-              Transmisión Fuera de Horario
-            </h2>
-
-            <p id="offline-desc" class="mt-2 text-xs sm:text-sm text-neutral-200 leading-relaxed">
-              En este momento la señal en vivo se encuentra en pausa. Vuelve en nuestro horario habitual o pulsa Actualizar.
-            </p>
-
-            <!-- Horario de transmisión -->
-            <div class="mt-4 bg-neutral-800/90 border border-neutral-500/40 rounded-xl px-4 py-3 text-left space-y-1">
-              <p class="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
-                Horario de Transmisión en Vivo
-              </p>
-              <p class="text-xs sm:text-sm font-semibold text-white">
-                Lunes a Domingo • 12:00 a 00:00 hs (Señal Central)
-              </p>
-              <p class="text-[11px] text-neutral-300">
-                Programación especial, novelas y cine según grilla diaria.
-              </p>
+            <!-- Marca / Ícono DNPlus TV en Esquina Derecha -->
+            <div class="absolute top-3 right-3.5 sm:top-4 sm:right-5 z-20 flex items-center gap-1.5 bg-slate-950/85 border border-white/15 px-2.5 py-1 rounded-lg shadow-lg pointer-events-none">
+                <img
+                    src="https://i.postimg.cc/LXRZWmVc/Picsart-26-11-16-18-48-31-391.jpg"
+                    alt="DNPlus TV"
+                    onerror="this.onerror=null;this.src='https://placehold.co/48x48/0f172a/38bdf8?text=DN5';"
+                    class="w-4 h-4 rounded object-contain bg-white/10"
+                >
+                <span class="text-[10px] font-black text-white">DNPlus <span class="text-sky-400">TV</span></span>
             </div>
 
-            <div class="mt-5 flex items-center justify-center gap-2.5">
-              <button
-                id="btn-offline-actualizar"
+            <!-- Loader Estilo Disney+ con Fondo Gris Azulado Nativo -->
+            <div id="siteDisneyLoader" class="hidden absolute inset-0 z-20 bg-gradient-to-br from-[#1b2838] via-[#162238] to-[#0f172a] flex flex-col items-center justify-center gap-2.5 pointer-events-none">
+                <div class="disney-loader-ring"></div>
+                <span id="siteLoaderChannelText" class="text-xs font-black tracking-wide text-slate-100 drop-shadow">Cargando canal...</span>
+                <span class="text-[10px] font-bold text-sky-300/80 uppercase tracking-widest">Canal 5 DNPlus TV</span>
+            </div>
+
+            <!-- Pantalla de Espera -->
+            <div id="siteStandbyScreen" class="absolute inset-0 z-10 bg-red-700 flex items-center justify-center p-4 text-center">
+                <div class="w-full max-w-md bg-slate-800/95 border-2 border-slate-500/60 rounded-2xl px-4 py-4 shadow-2xl flex flex-col items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">
+                        Señal Oficial • Caaguazú
+                    </span>
+                    <h3 class="text-base sm:text-xl font-black text-white tracking-tight">
+                        DNPlus TV canal 5
+                    </h3>
+                    <p class="text-xs sm:text-sm font-bold text-slate-200">
+                        Transmite de <span class="text-amber-300 font-black">6:30</span> hasta las <span class="text-amber-300 font-black">10:00 de la noche</span>
+                    </p>
+                </div>
+            </div>
+
+            <div id="siteNotice" class="hidden absolute inset-x-4 top-12 z-30 bg-slate-950/90 border border-sky-500/40 text-sky-200 px-3 py-1.5 rounded-xl text-xs font-bold text-center shadow-lg">
+                <span id="siteNoticeText">Sincronizando...</span>
+            </div>
+
+            <video
+                id="siteVideo"
+                class="w-full h-full object-contain bg-[#162238]"
+                poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23162238'/%3E%3C/svg%3E"
+                autoplay
+                playsinline
+                preload="auto"
+                disablePictureInPicture
+            ></video>
+
+            <iframe
+                id="siteWebFrame"
+                class="hidden w-full h-full border-0 bg-black"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allowfullscreen
+            ></iframe>
+
+            <!-- Controles Flotantes -->
+            <div id="siteBottomControls" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" class="absolute bottom-2 left-2 right-2 sm:left-auto z-30 flex items-center justify-end gap-1 overflow-x-auto no-scrollbar">
+                <button
+                    type="button"
+                    onclick="event.stopPropagation(); toggleSiteAudio();"
+                    class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-slate-900 text-white border border-white/15 text-[10px] font-black flex items-center gap-1 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i id="siteMuteIcon" class="fa-solid fa-volume-high text-emerald-400"></i>
+                </button>
+                <button
+                    type="button"
+                    onclick="event.stopPropagation(); toggleSiteFullscreen();"
+                    class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-sky-600 text-white border border-white/15 text-[10px] font-black flex items-center gap-1 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i id="siteFsIcon" class="fa-solid fa-expand"></i>
+                    <span>TV</span>
+                </button>
+                <button
+                    type="button"
+                    id="btnSiteBackOverlay"
+                    onclick="event.stopPropagation(); goBackSiteChannel();"
+                    class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-amber-500 text-white hover:text-slate-950 border border-white/15 text-[10px] font-black flex items-center gap-1 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Atrás</span>
+                </button>
+                <button
+                    type="button"
+                    onclick="event.stopPropagation(); toggleSiteScreenRotation();"
+                    aria-label="Rotar pantalla horizontal en celular"
+                    class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-emerald-600 text-white border border-white/15 text-[10px] font-black flex items-center gap-1 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Girar</span>
+                </button>
+                <button
+                    type="button"
+                    onclick="event.stopPropagation(); playPrevSiteChannel();"
+                    class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-sky-600 text-white border border-white/15 text-[10px] font-black flex items-center gap-0.5 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i class="fa-solid fa-minus"></i>
+                    <span>CH</span>
+                </button>
+                <button
+                    type="button"
+                    onclick="event.stopPropagation(); playNextChannel();"
+                    class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-sky-600 text-white border border-white/15 text-[10px] font-black flex items-center gap-0.5 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    <span>CH</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5">
+            <p id="activeStreamTitle" class="text-xs font-black text-white truncate">DNPlus TV Canal 5</p>
+            <button
                 type="button"
-                class="tv-focusable px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition cursor-pointer"
-              >
-                Actualizar Señal
-              </button>
-            </div>
-          </div>
+                onclick="unlockSiteAudioSilently()"
+                class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-2.5 py-1 rounded-lg text-[10px] flex items-center gap-1 shrink-0 cursor-pointer transition"
+            >
+                <i class="fa-solid fa-volume-high"></i>
+                <span>Audio</span>
+            </button>
         </div>
-      </div>
-
-      <!-- Barra de estado debajo del video con categoría actual y controles rápidos -->
-      <div class="app-chrome mt-2 px-2 py-1 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex items-center gap-2 min-w-0">
-          <span id="now-playing-category" class="px-2 py-0.5 rounded-md font-bold bg-[#0f3366] text-cyan-300 border border-cyan-500/25 shrink-0">
-            TV en Vivo
-          </span>
-          <span id="now-playing-desc" class="text-slate-300 truncate">
-            Canal 5 DNPlus TV — Transmisión principal en vivo
-          </span>
-        </div>
-        <div class="flex items-center gap-2 text-[11px] text-cyan-300/80">
-          <span id="stream-tech-badge">HLS (.m3u8) / MP4 Listo</span>
-        </div>
-      </div>
     </section>
 
-    <!-- FILAS HORIZONTALES DESPLAZABLES (CARRUSELES) CON TODAS LAS CATEGORÍAS -->
-    <main id="catalog-container" class="app-chrome flex flex-col gap-4 pb-2">
-      <!-- Se renderiza dinámicamente con todas las categorías solicitadas -->
-    </main>
+    <!-- Catálogo Deslizable por Categorías -->
+    <main id="siteCategoriesContainer" class="flex flex-col gap-2.5 pb-2"></main>
 
-    <!-- BANNER INFERIOR DE CONTACTO POR WHATSAPP PARA CONTRATACIONES Y SHOWS EN VIVO -->
-    <footer class="app-chrome bg-gradient-to-r from-[#092144] via-[#0c2d5c] to-[#092144] border border-[#1d4d8f] rounded-2xl px-4 sm:px-6 py-4 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5">
-      <div class="flex items-start sm:items-center gap-3">
-        <div class="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-sm sm:text-base font-extrabold text-white">
-            Contrataciones, Publicidad y Shows en Vivo — Canal 5 DNPlus TV
-          </h3>
-          <p class="text-xs sm:text-sm text-cyan-200/85">
-            Cobertura de eventos, festivales, transmisiones en vivo y espacios comerciales en toda nuestra señal digital.
-          </p>
-        </div>
-      </div>
-
-      <a
-        href="https://wa.me/595981000000?text=Hola%20DNPlus%20TV%20Canal%205,%20quisiera%20informaci%C3%B3n%20sobre%20contrataciones,%20publicidad%20o%20shows%20en%20vivo."
-        target="_blank"
-        rel="noopener noreferrer"
-        class="tv-focusable inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 shadow-lg transition shrink-0"
-      >
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-          <path d="M20.52 3.48A11.86 11.86 0 0012.07 0C5.5 0 .16 5.34.16 11.91c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 005.74 1.46h.01c6.57 0 11.91-5.34 11.91-11.91 0-3.18-1.24-6.17-3.47-8.41zM12.08 21.79h-.01a9.87 9.87 0 01-5.03-1.38l-.36-.21-3.76.99 1-3.66-.24-.38a9.86 9.86 0 01-1.51-5.24c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 012.89 7c0 5.45-4.44 9.88-9.87 9.88z" />
-        </svg>
-        <span>Contrataciones por WhatsApp</span>
-      </a>
+    <!-- Pie de Página -->
+    <footer class="bg-[#07122b] border border-blue-950 rounded-xl py-2.5 px-3 text-center text-[11px] text-slate-400">
+        Contratas <span class="text-emerald-400 font-black">David Y Su Grupo Tropical</span> al WhatsApp
+        <a href="https://wa.me/595992536184" target="_blank" rel="noopener noreferrer" class="text-emerald-300 underline font-black">0992536184</a>
     </footer>
-  </div>
 
-  <!-- Botón flotante para salir de Modo TV Lleno -->
-  <button
-    id="btn-exit-tv-fill"
-    type="button"
-    class="hidden fixed bottom-4 right-4 z-50 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#0a2348]/95 hover:bg-cyan-500 hover:text-slate-950 text-white border border-cyan-400/50 shadow-2xl backdrop-blur-md transition cursor-pointer"
-  >
-    Mostrar Canales y Menú
-  </button>
+    <script>
+        const SITE_STORAGE_KEY = 'dnplus_sites_saved_channels_v2';
+        const MQTT_BROKERS = [
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://broker.hivemq.com:8884/mqtt',
+            'wss://test.mosquitto.org:8081/mqtt'
+        ];
+        const MQTT_TOPICS = [
+            'dnplus/canal5/live',
+            'dnplus/canal5/playlist',
+            'dnplus/canal5/DNPLUS-CANAL5-OFICIAL',
+            'canal5-dnplus-senal-vivo'
+        ];
 
-  <script>
-    /**
-     * Catálogo completo de DNPlus TV con todas las filas y títulos solicitados.
-     * Cada tarjeta puede reproducir su flujo HLS (.m3u8) o MP4 en el reproductor superior.
-     */
-    const DNPLUS_CATALOG = [
-      {
-        id: 'tv-en-vivo',
-        title: 'TV en Vivo',
-        badge: 'SEÑAL EN DIRECTO',
-        items: [
-          {
-            id: 'dnplus-ch5',
-            code: 'CH 01',
-            name: 'Canal 5 DNPlus TV',
-            subtitle: 'Señal Digital Conectada • 24/7',
-            tag: 'TV EN VIVO',
-            accent: '#06b6d4',
-            initials: 'DN5',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          },
-          {
-            id: 'telefuturo',
-            code: 'CH 02',
-            name: 'Telefuturo',
-            subtitle: 'Televisión Nacional • En Vivo',
-            tag: 'TV EN VIVO',
-            accent: '#2563eb',
-            initials: 'TF',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-          },
-          {
-            id: 'snt-canal-9',
-            code: 'CH 03',
-            name: 'SNT Canal 9',
-            subtitle: 'Sistema Nacional de Televisión',
-            tag: 'TV EN VIVO',
-            accent: '#0284c7',
-            initials: 'SNT',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-          },
-          {
-            id: 'rpc',
-            code: 'CH 04',
-            name: 'RPC',
-            subtitle: 'Red Paraguaya de Comunicación',
-            tag: 'TV EN VIVO',
-            accent: '#dc2626',
-            initials: 'RPC',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-          },
-          {
-            id: 'el-trece',
-            code: 'CH 05',
-            name: 'El Trece',
-            subtitle: 'Noticias, Entretenimiento y Variedades',
-            tag: 'TV EN VIVO',
-            accent: '#ea580c',
-            initials: '13',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
-          },
-          {
-            id: 'las-estrellas',
-            code: 'CH 06',
-            name: 'Las Estrellas',
-            subtitle: 'Novelas, Espectáculos y Series',
-            tag: 'TV EN VIVO',
-            accent: '#d97706',
-            initials: 'LE',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-          },
-          {
-            id: 'telemundo',
-            code: 'CH 07',
-            name: 'Telemundo',
-            subtitle: 'Señal Internacional en Español',
-            tag: 'TV EN VIVO',
-            accent: '#e11d48',
-            initials: 'TM',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-          },
-          {
-            id: 'caracol-tv',
-            code: 'CH 08',
-            name: 'Caracol TV',
-            subtitle: 'Señal Internacional • En Vivo',
-            tag: 'TV EN VIVO',
-            accent: '#0d9488',
-            initials: 'CR',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-          },
-        ],
-      },
-      {
-        id: 'peliculas-y-series',
-        title: 'Películas y Series',
-        badge: 'CINE Y ESTRENOS',
-        items: [
-          {
-            id: 'terror-profundo-3',
-            code: 'CINE 01',
-            name: 'Terror Profundo 3',
-            subtitle: 'Suspenso • Acción Submarina',
-            tag: 'PELÍCULA',
-            accent: '#b91c1c',
-            initials: 'TP3',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-          },
-          {
-            id: 'stockholm',
-            code: 'CINE 02',
-            name: 'Stockholm',
-            subtitle: 'Drama • Crimen Basado en Hechos Reales',
-            tag: 'PELÍCULA',
-            accent: '#1d4ed8',
-            initials: 'STK',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-          },
-          {
-            id: 'coraje-de-mujer',
-            code: 'CINE 03',
-            name: 'Coraje de mujer',
-            subtitle: 'Drama • Historia de Superación',
-            tag: 'SERIE / CINE',
-            accent: '#9333ea',
-            initials: 'CM',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-          },
-          {
-            id: 'venganza-de-un-tirador',
-            code: 'CINE 04',
-            name: 'Venganza de un tirador',
-            subtitle: 'Acción • Thriller Policial',
-            tag: 'PELÍCULA',
-            accent: '#c2410c',
-            initials: 'VT',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-          },
-          {
-            id: 'idiocracia',
-            code: 'CINE 05',
-            name: 'Idiocracia',
-            subtitle: 'Comedia • Ciencia Ficción',
-            tag: 'PELÍCULA',
-            accent: '#0891b2',
-            initials: 'IDQ',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-          },
-        ],
-      },
-      {
-        id: 'novelas',
-        title: 'Novelas',
-        badge: 'CAPÍTULOS Y MARATONES',
-        items: [
-          {
-            id: 'novela-1',
-            code: 'NOV 01',
-            name: 'Pasión y Destino',
-            subtitle: 'Estreno Estelar • Capítulo del Día',
-            tag: 'NOVELA',
-            accent: '#db2777',
-            initials: 'PD',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-          },
-          {
-            id: 'novela-2',
-            code: 'NOV 02',
-            name: 'La Fuerza del Amor',
-            subtitle: 'Drama Romántico • Señal Canal 5',
-            tag: 'NOVELA',
-            accent: '#e11d48',
-            initials: 'FA',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          },
-          {
-            id: 'novela-3',
-            code: 'NOV 03',
-            name: 'Secretos de Familia',
-            subtitle: 'Telenovela Internacional',
-            tag: 'NOVELA',
-            accent: '#7c3aed',
-            initials: 'SF',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
-          },
-          {
-            id: 'novela-4',
-            code: 'NOV 04',
-            name: 'Caminos Cruzados',
-            subtitle: 'Maratón Nocturno DNPlus',
-            tag: 'NOVELA',
-            accent: '#c026d3',
-            initials: 'CC',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-          },
-        ],
-      },
-      {
-        id: 'deportes',
-        title: 'Deportes',
-        badge: 'FÚTBOL Y ACCIÓN',
-        items: [
-          {
-            id: 'dep-1',
-            code: 'DEP 01',
-            name: 'DNPlus Deportes HD',
-            subtitle: 'Fútbol Nacional e Internacional',
-            tag: 'DEPORTES',
-            accent: '#16a34a',
-            initials: 'DEP',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-          },
-          {
-            id: 'dep-2',
-            code: 'DEP 02',
-            name: 'Zona de Gol',
-            subtitle: 'Resúmenes, Análisis y Tablas',
-            tag: 'DEPORTES',
-            accent: '#15803d',
-            initials: 'ZG',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-          },
-          {
-            id: 'dep-3',
-            code: 'DEP 03',
-            name: 'Motor y Velocidad',
-            subtitle: 'Rally, Automovilismo y Competición',
-            tag: 'DEPORTES',
-            accent: '#0d9488',
-            initials: 'MV',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-          },
-        ],
-      },
-      {
-        id: '24-7',
-        title: '24/7',
-        badge: 'SEÑAL CONTINUA',
-        items: [
-          {
-            id: '247-1',
-            code: '24/7',
-            name: 'Canal 5 Continuo 24/7',
-            subtitle: 'Transmisión Ininterrumpida Todo el Día',
-            tag: '24/7',
-            accent: '#06b6d4',
-            initials: '24/7',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          },
-          {
-            id: '247-2',
-            code: '24/7',
-            name: 'Cine Acción 24/7',
-            subtitle: 'Películas Sin Cortes',
-            tag: '24/7',
-            accent: '#2563eb',
-            initials: 'CA',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-          },
-          {
-            id: '247-3',
-            code: '24/7',
-            name: 'Comedia y Humor 24/7',
-            subtitle: 'Clásicos y Programas de Humor',
-            tag: '24/7',
-            accent: '#0284c7',
-            initials: 'CH',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-          },
-        ],
-      },
-      {
-        id: 'musica',
-        title: 'Música',
-        badge: 'HITS Y SHOWS EN VIVO',
-        items: [
-          {
-            id: 'mus-1',
-            code: 'MUS 01',
-            name: 'DNPlus Music Hits',
-            subtitle: 'Éxitos Latinos, Cumbia, Cachaca y Pop',
-            tag: 'MÚSICA',
-            accent: '#8b5cf6',
-            initials: 'MH',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
-          },
-          {
-            id: 'mus-2',
-            code: 'MUS 02',
-            name: 'Conciertos y Shows en Vivo',
-            subtitle: 'Presentaciones Exclusivas Canal 5',
-            tag: 'EN VIVO',
-            accent: '#6366f1',
-            initials: 'SHW',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-          },
-          {
-            id: 'mus-3',
-            code: 'MUS 03',
-            name: 'Retro Clásicos TV',
-            subtitle: 'Los Mejores Videoclips de Siempre',
-            tag: 'MÚSICA',
-            accent: '#4f46e5',
-            initials: 'RET',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-          },
-        ],
-      },
-      {
-        id: 'cultura',
-        title: 'Cultura',
-        badge: 'IDENTIDAD Y DOCUMENTALES',
-        items: [
-          {
-            id: 'cul-1',
-            code: 'CUL 01',
-            name: 'Raíces y Tradición',
-            subtitle: 'Cultura, Historia y Nuestra Gente',
-            tag: 'CULTURA',
-            accent: '#0d9488',
-            initials: 'RT',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-          },
-          {
-            id: 'cul-2',
-            code: 'CUL 02',
-            name: 'Documentales DNPlus',
-            subtitle: 'Naturaleza, Ciencia y Reportajes',
-            tag: 'CULTURA',
-            accent: '#059669',
-            initials: 'DOC',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-          },
-        ],
-      },
-      {
-        id: 'animados-infantiles',
-        title: 'Animados / Infantiles',
-        badge: 'PARA TODA LA FAMILIA',
-        items: [
-          {
-            id: 'inf-1',
-            code: 'KIDS 01',
-            name: 'DNPlus Kids',
-            subtitle: 'Dibujos Animados y Aventuras',
-            tag: 'INFANTIL',
-            accent: '#f59e0b',
-            initials: 'KID',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          },
-          {
-            id: 'inf-2',
-            code: 'KIDS 02',
-            name: 'Mundo Animado',
-            subtitle: 'Series Infantiles y Familiares',
-            tag: 'ANIMADOS',
-            accent: '#ea580c',
-            initials: 'ANI',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-          },
-          {
-            id: 'inf-3',
-            code: 'KIDS 03',
-            name: 'Cuentos y Fantasía',
-            subtitle: 'Películas Animadas para Niños',
-            tag: 'INFANTIL',
-            accent: '#d97706',
-            initials: 'CF',
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
-          },
-        ],
-      },
-    ];
+        const SITE_CAT_META = {
+            tv: { label: 'TV EN VIVO', icon: 'fa-tv', grad: 'from-sky-500 to-blue-700', text: 'text-sky-400' },
+            peliculas: { label: 'PELÍCULAS Y SERIES', icon: 'fa-film', grad: 'from-violet-600 to-indigo-800', text: 'text-violet-400' },
+            deportes: { label: 'DEPORTES', icon: 'fa-futbol', grad: 'from-emerald-500 to-teal-700', text: 'text-emerald-400' },
+            novelas: { label: 'NOVELAS', icon: 'fa-heart', grad: 'from-rose-500 to-pink-700', text: 'text-rose-400' },
+            '247': { label: 'TV 24/7', icon: 'fa-infinity', grad: 'from-amber-500 to-orange-700', text: 'text-amber-400' },
+            musica: { label: 'MÚSICA', icon: 'fa-music', grad: 'from-fuchsia-500 to-purple-700', text: 'text-fuchsia-400' },
+            cultura: { label: 'CULTURA', icon: 'fa-landmark', grad: 'from-teal-500 to-cyan-700', text: 'text-teal-400' },
+            animados: { label: 'ANIMADOS', icon: 'fa-wand-sparkles', grad: 'from-orange-500 to-red-700', text: 'text-orange-400' }
+        };
 
-    // Estado global del reproductor
-    const playerState = {
-      activeItemId: DNPLUS_CATALOG[0].items[0].id,
-      activeCategoryTitle: DNPLUS_CATALOG[0].title,
-      activeItem: DNPLUS_CATALOG[0].items[0],
-      isOffline: false,
-      tvFillMode: false,
-    };
+        let channels = [];
+        let activeIdx = 0;
+        let siteHistory = [];
+        let hls = null;
+        let siteAudioUnlocked = false;
+        let isSiteFs = false;
+        let isSiteRotated = false;
+        let lastSignalTs = 0;
+        const siteClients = [];
+        const videoEl = document.getElementById('siteVideo');
+        const siteWebFrame = document.getElementById('siteWebFrame');
+        const siteStandby = document.getElementById('siteStandbyScreen');
+        const siteMonitorBox = document.getElementById('siteMonitorBox');
 
-    let hlsPlayer = null;
-
-    const dom = {
-      video: document.getElementById('main-video'),
-      playerContainer: document.getElementById('player-container'),
-      osdChannelCode: document.getElementById('osd-channel-code'),
-      osdChannelName: document.getElementById('osd-channel-name'),
-      osdLiveBadge: document.getElementById('osd-live-badge'),
-      osdLiveDot: document.getElementById('osd-live-dot'),
-      offlineScreen: document.getElementById('offline-screen'),
-      offlineTitle: document.getElementById('offline-title'),
-      nowPlayingCategory: document.getElementById('now-playing-category'),
-      nowPlayingDesc: document.getElementById('now-playing-desc'),
-      streamTechBadge: document.getElementById('stream-tech-badge'),
-      catalogContainer: document.getElementById('catalog-container'),
-      toolsPanel: document.getElementById('tools-panel'),
-      toolsStatusMsg: document.getElementById('tools-status-msg'),
-      inputStreamUrl: document.getElementById('input-stream-url'),
-      fullscreenBtnText: document.getElementById('fullscreen-btn-text'),
-      btnExitTvFill: document.getElementById('btn-exit-tv-fill'),
-    };
-
-    function isHlsStream(url) {
-      return /\.m3u8(\?.*)?$/i.test((url || '').trim());
-    }
-
-    function destroyHls() {
-      if (hlsPlayer) {
-        try {
-          hlsPlayer.destroy();
-        } catch (err) {
-          console.warn('Error al destruir instancia HLS:', err);
+        function toggleSiteStandby(show) {
+            if (!siteStandby) return;
+            if (show) siteStandby.classList.remove('hidden');
+            else siteStandby.classList.add('hidden');
         }
-        hlsPlayer = null;
-      }
-    }
 
-    /**
-     * Genera una miniatura SVG nítida y temática para cada tarjeta sin depender de imágenes externas rotas.
-     */
-    function buildCardArtworkSvg(item) {
-      return `
-        <svg class="w-full h-full" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="bg-${item.id}" x1="0" y1="0" x2="320" y2="180" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#0a254d" />
-              <stop offset="0.55" stop-color="${item.accent}" stop-opacity="0.45" />
-              <stop offset="1" stop-color="#051329" />
-            </linearGradient>
-          </defs>
-          <rect width="320" height="180" fill="url(#bg-${item.id})" />
-          <circle cx="275" cy="35" r="56" fill="${item.accent}" fill-opacity="0.18" />
-          <circle cx="45" cy="155" r="64" fill="#06b6d4" fill-opacity="0.12" />
-          <rect x="112" y="46" width="96" height="62" rx="14" fill="#061630" fill-opacity="0.88" stroke="${item.accent}" stroke-width="2.5" />
-          <text x="160" y="84" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-weight="900" font-size="24">${item.initials}</text>
-          <text x="160" y="136" text-anchor="middle" fill="#E2E8F0" font-family="Inter, sans-serif" font-weight="700" font-size="13">${item.name}</text>
-        </svg>
-      `;
-    }
+        let siteLoaderTimeout = null;
+        function setSiteDisneyLoader(show, labelText = 'Cargando señal...') {
+            const loader = document.getElementById('siteDisneyLoader');
+            const txt = document.getElementById('siteLoaderChannelText');
+            if (!loader) return;
+            clearTimeout(siteLoaderTimeout);
+            if (show) {
+                if (txt) txt.textContent = labelText;
+                loader.classList.remove('hidden');
+                siteLoaderTimeout = setTimeout(() => loader.classList.add('hidden'), 6000);
+            } else {
+                loader.classList.add('hidden');
+            }
+        }
 
-    /**
-     * Renderiza todas las filas horizontales (carruseles) de categorías debajo del reproductor.
-     */
-    function renderCatalog() {
-      dom.catalogContainer.innerHTML = '';
+        function highlightSiteChannelChange(numStr, chName) {
+            const banner = document.getElementById('siteChannelBanner');
+            if (!banner) return;
+            banner.classList.remove('scale-105', 'border-amber-400');
+            void banner.offsetWidth;
+            banner.classList.add('scale-105', 'border-amber-400');
+            setTimeout(() => {
+                banner.classList.remove('scale-105', 'border-amber-400');
+            }, 900);
+            showNotice(`${numStr} • ${chName}`, 1600);
+        }
 
-      DNPLUS_CATALOG.forEach((category) => {
-        const section = document.createElement('section');
-        section.className = 'bg-[#081d3d]/90 border border-[#173f78] rounded-2xl p-3 sm:p-4 shadow-lg';
-        section.setAttribute('aria-label', category.title);
+        let siteNoticeTimer = null;
+        function showNotice(msg, ms = 1800) {
+            const box = document.getElementById('siteNotice');
+            const txt = document.getElementById('siteNoticeText');
+            if (!box || !txt) return;
+            txt.textContent = msg;
+            box.classList.remove('hidden');
+            clearTimeout(siteNoticeTimer);
+            if (ms > 0) {
+                siteNoticeTimer = setTimeout(() => box.classList.add('hidden'), ms);
+            }
+        }
 
-        // Encabezado de la fila con título y botones de desplazamiento horizontal
-        const headerRow = document.createElement('div');
-        headerRow.className = 'flex items-center justify-between gap-2 mb-2.5';
-        headerRow.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="w-1.5 h-5 rounded-full bg-cyan-400"></span>
-            <h2 class="text-sm sm:text-base font-extrabold tracking-tight text-white">${category.title}</h2>
-            <span class="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0d2c59] text-cyan-300 border border-cyan-500/20">
-              ${category.badge}
-            </span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button
-              type="button"
-              data-scroll-dir="-1"
-              class="tv-focusable w-7 h-7 rounded-lg bg-[#0d2b57] hover:bg-cyan-500 hover:text-slate-950 text-cyan-200 border border-[#1d4d8f] flex items-center justify-center transition cursor-pointer"
-              title="Desplazar izquierda"
-              aria-label="Desplazar ${category.title} a la izquierda"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              data-scroll-dir="1"
-              class="tv-focusable w-7 h-7 rounded-lg bg-[#0d2b57] hover:bg-cyan-500 hover:text-slate-950 text-cyan-200 border border-[#1d4d8f] flex items-center justify-center transition cursor-pointer"
-              title="Desplazar derecha"
-              aria-label="Desplazar ${category.title} a la derecha"
-            >
-              ›
-            </button>
-          </div>
-        `;
+        function classifySiteCat(item) {
+            if (item && SITE_CAT_META[item.category]) return item.category;
+            const u = String(item?.url || '').trim();
+            return /\.(mp4|mpg|mpeg|webm|m4v)(\?|$)/i.test(u) ? 'peliculas' : 'tv';
+        }
 
-        const rowTrack = document.createElement('div');
-        rowTrack.className = 'carousel-row';
+        function isHlsUrl(u) {
+            const clean = String(u || '').trim();
+            return /\.m3u8(\?|$)/i.test(clean) || /\/hls\/|playlist\.m3u8|chunklist/i.test(clean);
+        }
 
-        // Eventos de flechas de desplazamiento por fila
-        headerRow.querySelectorAll('button[data-scroll-dir]').forEach((arrowBtn) => {
-          arrowBtn.addEventListener('click', () => {
-            const dir = Number(arrowBtn.getAttribute('data-scroll-dir'));
-            rowTrack.scrollBy({ left: dir * 320, behavior: 'smooth' });
-          });
+        function isDirectSiteVideo(u) {
+            const clean = String(u || '').trim();
+            return isHlsUrl(clean) || /\.(mp4|mpg|mpeg|mkv|avi|webm|ogg|m4v|mov)(\?|$)/i.test(clean);
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(SITE_STORAGE_KEY, JSON.stringify(channels));
+            } catch (e) {}
+        }
+
+        function loadState() {
+            const keys = [
+                SITE_STORAGE_KEY,
+                'dnplus_viewer_saved_channels_v2',
+                'dnplus_panel_channels_v2',
+                'dnplus_saved_channels'
+            ];
+            for (let i = 0; i < keys.length; i++) {
+                try {
+                    const raw = localStorage.getItem(keys[i]);
+                    if (!raw) continue;
+                    const parsed = JSON.parse(raw);
+                    const list = Array.isArray(parsed) ? parsed : parsed?.channels;
+                    if (Array.isArray(list) && list.length > 0) {
+                        channels = list
+                            .filter((c) => c && c.url)
+                            .map((c) => ({
+                                title: String(c.title || 'Canal 5'),
+                                url: String(c.url).trim(),
+                                category: classifySiteCat(c)
+                            }));
+                        saveState();
+                        return;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function updateSiteMuteUi() {
+            const icon = document.getElementById('siteMuteIcon');
+            if (!icon || !videoEl) return;
+            icon.className = videoEl.muted
+                ? 'fa-solid fa-volume-xmark text-white'
+                : 'fa-solid fa-volume-high text-emerald-400';
+        }
+
+        function unlockSiteAudioSilently() {
+            siteAudioUnlocked = true;
+            if (!videoEl) return;
+            videoEl.muted = false;
+            videoEl.volume = 1;
+            videoEl.play().catch(() => {});
+            updateSiteMuteUi();
+        }
+
+        function toggleSiteAudio() {
+            if (!videoEl) return;
+            siteAudioUnlocked = true;
+            videoEl.muted = !videoEl.muted;
+            if (!videoEl.muted) {
+                videoEl.volume = 1;
+                videoEl.play().catch(() => {});
+            }
+            updateSiteMuteUi();
+        }
+
+        function toggleSiteScreenRotation() {
+            if (!siteMonitorBox) return;
+            if (!isSiteFs) {
+                toggleSiteFullscreen();
+            }
+            isSiteRotated = !isSiteRotated;
+            if (isSiteRotated) {
+                siteMonitorBox.classList.add('site-tv-rotated');
+            } else {
+                siteMonitorBox.classList.remove('site-tv-rotated');
+            }
+        }
+
+        function toggleSiteFullscreen() {
+            if (!siteMonitorBox) return;
+            const icon = document.getElementById('siteFsIcon');
+            const dock = document.getElementById('sitePlayerDock');
+
+            if (!isSiteFs) {
+                isSiteFs = true;
+                if (siteMonitorBox.parentElement !== document.body) {
+                    document.body.appendChild(siteMonitorBox);
+                }
+                siteMonitorBox.classList.add('site-tv-fs');
+                if (icon) icon.className = 'fa-solid fa-compress';
+            } else {
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                }
+                isSiteFs = false;
+                isSiteRotated = false;
+                siteMonitorBox.classList.remove('site-tv-fs', 'site-tv-rotated');
+                if (dock && siteMonitorBox.parentElement !== dock) {
+                    dock.insertBefore(siteMonitorBox, dock.firstChild);
+                }
+                if (icon) icon.className = 'fa-solid fa-expand';
+            }
+        }
+
+        function goBackSiteChannel() {
+            if (isSiteFs) {
+                toggleSiteFullscreen();
+                return;
+            }
+            if (siteHistory.length > 0) {
+                const prevIdx = siteHistory.pop();
+                playSiteChannel(prevIdx, false);
+                return;
+            }
+            const catBox = document.getElementById('siteCategoriesContainer');
+            if (catBox) {
+                catBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function playPrevSiteChannel() {
+            if (!channels.length) return;
+            const prev = (activeIdx - 1 + channels.length) % channels.length;
+            playSiteChannel(prev, true);
+        }
+
+        function playNextChannel() {
+            if (!channels.length) return;
+            const next = (activeIdx + 1) % channels.length;
+            playSiteChannel(next, true);
+        }
+
+        function playSiteChannel(idx, recordHistory = true) {
+            if (!channels.length) {
+                toggleSiteStandby(true);
+                setSiteDisneyLoader(false);
+                renderGrid();
+                return;
+            }
+
+            const targetIdx = ((idx % channels.length) + channels.length) % channels.length;
+            if (recordHistory && targetIdx !== activeIdx && channels[activeIdx]) {
+                siteHistory.push(activeIdx);
+                if (siteHistory.length > 20) siteHistory.shift();
+            }
+            activeIdx = targetIdx;
+
+            const item = channels[activeIdx];
+            const cat = classifySiteCat(item);
+            const meta = SITE_CAT_META[cat] || SITE_CAT_META.tv;
+            const numStr = `CH ${String(activeIdx + 1).padStart(2, '0')}`;
+
+            const numEl = document.getElementById('siteCornerChannelNum');
+            const nameEl = document.getElementById('siteCornerChannelName');
+            const badgeEl = document.getElementById('siteCatBadge');
+            const titleEl = document.getElementById('activeStreamTitle');
+
+            if (numEl) numEl.textContent = numStr;
+            if (nameEl) nameEl.textContent = item.title;
+            if (badgeEl) badgeEl.textContent = meta.label;
+            if (titleEl) titleEl.textContent = `${numStr} • ${item.title}`;
+
+            toggleSiteStandby(false);
+            setSiteDisneyLoader(true, `${numStr} • ${item.title}`);
+            highlightSiteChannelChange(numStr, item.title);
+
+            if (hls) {
+                try { hls.destroy(); } catch (e) {}
+                hls = null;
+            }
+
+            const cleanUrl = String(item.url || '').trim();
+            if (!isDirectSiteVideo(cleanUrl)) {
+                if (videoEl) {
+                    videoEl.pause();
+                    videoEl.removeAttribute('src');
+                    videoEl.classList.add('hidden');
+                }
+                if (siteWebFrame) {
+                    const ytMatch = cleanUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{6,})/);
+                    siteWebFrame.src = ytMatch ? `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0` : cleanUrl;
+                    siteWebFrame.classList.remove('hidden');
+                }
+                setSiteDisneyLoader(false);
+                renderGrid();
+                return;
+            }
+
+            if (siteWebFrame) {
+                siteWebFrame.src = 'about:blank';
+                siteWebFrame.classList.add('hidden');
+            }
+
+            if (videoEl) {
+                videoEl.classList.remove('hidden');
+                videoEl.pause();
+                videoEl.removeAttribute('src');
+                videoEl.load();
+                videoEl.muted = false;
+                videoEl.volume = 1;
+
+                const startPlay = () => {
+                    videoEl.muted = false;
+                    videoEl.volume = 1;
+                    videoEl.play().then(() => {
+                        setSiteDisneyLoader(false);
+                        updateSiteMuteUi();
+                    }).catch(() => {
+                        videoEl.muted = true;
+                        videoEl.play().then(() => {
+                            setSiteDisneyLoader(false);
+                            updateSiteMuteUi();
+                        }).catch(() => {
+                            setSiteDisneyLoader(false);
+                        });
+                    });
+                };
+
+                videoEl.onplaying = () => setSiteDisneyLoader(false);
+                videoEl.onended = () => {
+                    if (cat === '247' && channels.length > 1) {
+                        playNextChannel();
+                    }
+                };
+
+                if (isHlsUrl(cleanUrl) && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                    let retries = 0;
+                    hls = new Hls({
+                        enableWorker: false,
+                        lowLatencyMode: false,
+                        maxBufferLength: 20,
+                        manifestLoadingTimeOut: 12000,
+                        fragLoadingTimeOut: 15000
+                    });
+                    hls.loadSource(cleanUrl);
+                    hls.attachMedia(videoEl);
+                    hls.on(Hls.Events.MANIFEST_PARSED, startPlay);
+                    hls.on(Hls.Events.ERROR, (_, errData) => {
+                        if (errData && errData.fatal) {
+                            retries++;
+                            if (errData.type === Hls.ErrorTypes.NETWORK_ERROR && retries <= 2) {
+                                hls.startLoad();
+                            } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+                                try { hls.destroy(); } catch (e) {}
+                                hls = null;
+                                videoEl.src = cleanUrl;
+                                videoEl.load();
+                                startPlay();
+                            } else {
+                                setSiteDisneyLoader(false);
+                            }
+                        }
+                    });
+                } else {
+                    videoEl.src = cleanUrl;
+                    videoEl.loop = (cat === '247');
+                    videoEl.load();
+                    startPlay();
+                }
+            }
+
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('siteCategoriesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            Object.keys(SITE_CAT_META).forEach((catKey) => {
+                const meta = SITE_CAT_META[catKey];
+                const itemsInCat = channels
+                    .map((ch, idx) => ({ ch, idx }))
+                    .filter(({ ch }) => classifySiteCat(ch) === catKey);
+
+                const section = document.createElement('section');
+                section.className = 'bg-[#0a1329] border border-blue-900/70 rounded-2xl p-2.5 flex flex-col gap-2 shadow-md';
+                section.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[11px] font-black ${meta.text} uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid ${meta.icon}"></i> ${meta.label}
+                        </h3>
+                        <span class="text-[10px] font-mono text-slate-400">${itemsInCat.length}</span>
+                    </div>
+                `;
+
+                const row = document.createElement('div');
+                row.className = 'flex gap-2 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-0.5';
+
+                if (!itemsInCat.length) {
+                    row.innerHTML = `<p class="text-[11px] text-slate-500 py-2 px-1">Sin señales en ${meta.label}</p>`;
+                } else {
+                    itemsInCat.forEach(({ ch, idx }) => {
+                        const isSelected = idx === activeIdx;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.onclick = () => playSiteChannel(idx, true);
+                        btn.className = `snap-start shrink-0 w-28 sm:w-32 p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition ${
+                            isSelected
+                                ? 'bg-sky-600/25 border-sky-400 text-white shadow'
+                                : 'bg-slate-950/90 border-slate-800 hover:border-slate-700 text-slate-300'
+                        }`;
+                        btn.innerHTML = `
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${meta.grad} text-white flex items-center justify-center shadow">
+                                <i class="fa-solid ${meta.icon} text-sm"></i>
+                            </div>
+                            <p class="text-[11px] font-extrabold truncate w-full">${ch.title}</p>
+                            <span class="text-[9px] uppercase font-bold ${isSelected ? 'text-emerald-400' : 'text-slate-500'}">
+                                ${isSelected ? '● En Pantalla' : meta.label}
+                            </span>
+                        `;
+                        row.appendChild(btn);
+                    });
+                }
+
+                section.appendChild(row);
+                container.appendChild(section);
+            });
+        }
+
+        function applyIncomingFromPanel(data) {
+            if (!data || typeof data !== 'object') return;
+            const incomingTs = Number(data.timestamp || 0);
+            if (incomingTs && incomingTs <= lastSignalTs) return;
+            if (incomingTs) lastSignalTs = incomingTs;
+
+            if (data.action === 'clear_all') {
+                channels = [];
+                saveState();
+                toggleSiteStandby(true);
+                renderGrid();
+                return;
+            }
+
+            if (Array.isArray(data.channels) && data.channels.length > 0) {
+                const prevUrl = channels[activeIdx]?.url || '';
+                channels = data.channels
+                    .filter((c) => c && c.url)
+                    .map((c) => ({
+                        title: String(c.title || 'Canal 5'),
+                        url: String(c.url).trim(),
+                        category: classifySiteCat(c)
+                    }));
+                saveState();
+
+                const targetUrl = String(data.url || '').trim();
+                const foundIdx = targetUrl ? channels.findIndex((c) => c.url === targetUrl) : 0;
+                const nextIdx = foundIdx >= 0 ? foundIdx : 0;
+
+                if (!prevUrl || channels[nextIdx]?.url !== prevUrl) {
+                    playSiteChannel(nextIdx, false);
+                } else {
+                    renderGrid();
+                }
+            }
+        }
+
+        function refreshSiteFromPanel() {
+            const icon = document.getElementById('siteRefreshIcon');
+            if (icon) icon.classList.add('fa-spin');
+            setTimeout(() => {
+                if (icon) icon.classList.remove('fa-spin');
+            }, 900);
+
+            try {
+                const rawSig = localStorage.getItem('dnplus_live_signal');
+                if (rawSig) applyIncomingFromPanel(JSON.parse(rawSig));
+            } catch (e) {}
+
+            siteClients.forEach((c) => {
+                if (c && c.connected) {
+                    try {
+                        c.publish('dnplus/canal5/sync_request', JSON.stringify({ ts: Date.now() }));
+                    } catch (e) {}
+                }
+            });
+            showNotice('Señal actualizada', 1400);
+        }
+
+        function initSiteMqtt() {
+            if (typeof mqtt === 'undefined') return;
+            const statusEl = document.getElementById('mqttStatusText');
+
+            MQTT_BROKERS.forEach((brokerUrl) => {
+                try {
+                    const client = mqtt.connect(brokerUrl, {
+                        clientId: 'dnplus_site_' + Math.random().toString(16).slice(2, 10),
+                        clean: true,
+                        connectTimeout: 8000,
+                        reconnectPeriod: 4000
+                    });
+
+                    client.on('connect', () => {
+                        if (statusEl) {
+                            statusEl.textContent = 'Señal Digital Conectada • 24/7';
+                        }
+                        MQTT_TOPICS.forEach((t) => client.subscribe(t));
+                        client.publish('dnplus/canal5/sync_request', JSON.stringify({ ts: Date.now() }));
+                    });
+
+                    client.on('message', (_, message) => {
+                        try {
+                            applyIncomingFromPanel(JSON.parse(message.toString()));
+                        } catch (e) {}
+                    });
+
+                    siteClients.push(client);
+                } catch (e) {}
+            });
+        }
+
+        window.addEventListener('storage', (ev) => {
+            if (ev.key === 'dnplus_live_signal' && ev.newValue) {
+                try {
+                    applyIncomingFromPanel(JSON.parse(ev.newValue));
+                } catch (e) {}
+            }
         });
 
-        category.items.forEach((item) => {
-          const isSelected = item.id === playerState.activeItemId;
-          const card = document.createElement('button');
-          card.type = 'button';
-          card.className = isSelected
-            ? 'tv-focusable group relative w-[180px] sm:w-[215px] shrink-0 text-left rounded-xl overflow-hidden bg-[#0e3163] border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition cursor-pointer'
-            : 'tv-focusable group relative w-[180px] sm:w-[215px] shrink-0 text-left rounded-xl overflow-hidden bg-[#0a2348] hover:bg-[#0f3163] border border-[#1c4b8c] hover:border-cyan-400/70 transition cursor-pointer';
-
-          card.innerHTML = `
-            <div class="relative w-full aspect-video bg-[#040f21] overflow-hidden">
-              ${buildCardArtworkSvg(item)}
-              <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-[#061630]/90 text-cyan-300 border border-cyan-400/30">
-                ${item.code}
-              </span>
-              <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                item.tag === 'TV EN VIVO' ? 'bg-red-600 text-white' : 'bg-cyan-500 text-slate-950'
-              }">
-                ${item.tag}
-              </span>
-              ${
-                isSelected
-                  ? '<span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-slate-950">VIENDO</span>'
-                  : ''
-              }
-            </div>
-            <div class="p-2.5">
-              <p class="text-xs sm:text-sm font-extrabold text-white truncate group-hover:text-cyan-300 transition">
-                ${item.name}
-              </p>
-              <p class="text-[11px] text-cyan-200/75 truncate mt-0.5">
-                ${item.subtitle}
-              </p>
-            </div>
-          `;
-
-          card.addEventListener('click', () => {
-            selectCatalogItem(category.title, item);
-          });
-
-          rowTrack.appendChild(card);
+        window.addEventListener('keydown', (ev) => {
+            if (ev.key === 'ChannelUp' || ev.key === 'PageUp') {
+                playNextChannel();
+            } else if (ev.key === 'ChannelDown' || ev.key === 'PageDown') {
+                playPrevSiteChannel();
+            } else if (ev.key === 'Escape' || ev.key === 'Backspace') {
+                if (isSiteFs) toggleSiteFullscreen();
+            }
         });
 
-        section.appendChild(headerRow);
-        section.appendChild(rowTrack);
-        dom.catalogContainer.appendChild(section);
-      });
-    }
-
-    /**
-     * Actualiza las etiquetas OSD superiores del reproductor y la barra inferior.
-     */
-    function updatePlayerHeaderOSD(categoryTitle, item) {
-      dom.osdChannelCode.textContent = item.code || 'CH 01';
-      dom.osdChannelName.textContent = item.name;
-      dom.nowPlayingCategory.textContent = categoryTitle;
-      dom.nowPlayingDesc.textContent = `${item.name} — ${item.subtitle}`;
-
-      if (playerState.isOffline) {
-        dom.osdLiveDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0';
-        dom.osdLiveBadge.textContent = 'EN ESPERA';
-        dom.osdLiveBadge.className =
-          'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold tracking-wide bg-neutral-700 text-neutral-100 shrink-0';
-      } else {
-        dom.osdLiveDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shrink-0';
-        dom.osdLiveBadge.textContent = item.tag || 'TV EN VIVO';
-        dom.osdLiveBadge.className =
-          'px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold tracking-wide bg-red-600 text-white shrink-0';
-      }
-    }
-
-    /**
-     * Activa la pantalla de espera / fuera de horario (fondo rojo sólido + cuadro gris central).
-     * No ejecuta recarga automática.
-     */
-    function showOfflineScreen(customTitle = 'Transmisión Fuera de Horario') {
-      playerState.isOffline = true;
-      destroyHls();
-
-      try {
-        dom.video.pause();
-        dom.video.removeAttribute('src');
-        dom.video.load();
-      } catch (err) {
-        console.warn('Error al detener video:', err);
-      }
-
-      dom.offlineTitle.textContent = customTitle;
-      dom.offlineScreen.classList.remove('hidden');
-      updatePlayerHeaderOSD(playerState.activeCategoryTitle, playerState.activeItem);
-    }
-
-    /**
-     * Reproduce un flujo HLS (.m3u8) mediante hls.js o MP4 nativo en el reproductor.
-     */
-    function playStreamUrl(url) {
-      const cleanUrl = (url || '').trim();
-      if (!cleanUrl) {
-        showOfflineScreen('Señal No Disponible');
-        return;
-      }
-
-      playerState.isOffline = false;
-      dom.offlineScreen.classList.add('hidden');
-      updatePlayerHeaderOSD(playerState.activeCategoryTitle, playerState.activeItem);
-      destroyHls();
-
-      const hlsMode = isHlsStream(cleanUrl);
-      dom.streamTechBadge.textContent = hlsMode ? 'Flujo HLS (.m3u8) Conectado' : 'Flujo Digital MP4 Conectado';
-
-      try {
-        if (hlsMode) {
-          if (window.Hls && window.Hls.isSupported()) {
-            hlsPlayer = new window.Hls({
-              enableWorker: true,
-              lowLatencyMode: true,
-            });
-            hlsPlayer.loadSource(cleanUrl);
-            hlsPlayer.attachMedia(dom.video);
-            hlsPlayer.on(window.Hls.Events.MANIFEST_PARSED, () => {
-              dom.video.play().catch(() => {});
-            });
-            hlsPlayer.on(window.Hls.Events.ERROR, (_evt, data) => {
-              if (data && data.fatal) {
-                showOfflineScreen('Señal HLS en Espera');
-              }
-            });
-          } else if (dom.video.canPlayType('application/vnd.apple.mpegurl')) {
-            dom.video.src = cleanUrl;
-            dom.video.play().catch(() => {});
-          } else {
-            showOfflineScreen('Navegador sin soporte HLS');
-          }
-        } else {
-          dom.video.src = cleanUrl;
-          dom.video.load();
-          dom.video.play().catch(() => {});
-        }
-      } catch (err) {
-        console.error('Error iniciando señal:', err);
-        showOfflineScreen('Señal en Espera');
-      }
-    }
-
-    /**
-     * Selecciona cualquier canal, película, novela o programa de las filas inferiores.
-     */
-    function selectCatalogItem(categoryTitle, item) {
-      playerState.activeItemId = item.id;
-      playerState.activeCategoryTitle = categoryTitle;
-      playerState.activeItem = item;
-      renderCatalog();
-      playStreamUrl(item.url);
-
-      // Desplaza suavemente hacia el reproductor superior en pantallas pequeñas
-      dom.playerContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    /**
-     * Activa o desactiva pantalla completa nativa en el contenedor del video.
-     */
-    async function toggleFullscreen() {
-      try {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-          if (dom.playerContainer.requestFullscreen) {
-            await dom.playerContainer.requestFullscreen();
-          } else if (dom.playerContainer.webkitRequestFullscreen) {
-            dom.playerContainer.webkitRequestFullscreen();
-          } else {
-            setTvFillMode(true);
-          }
-        } else {
-          if (document.exitFullscreen) {
-            await document.exitFullscreen();
-          } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-          }
-        }
-      } catch (err) {
-        setTvFillMode(!playerState.tvFillMode);
-      }
-    }
-
-    /**
-     * Alterna modo pantalla llena para Smart TV / WebIntoApp sin barras alrededor.
-     */
-    function setTvFillMode(enabled) {
-      playerState.tvFillMode = Boolean(enabled);
-      document.body.classList.toggle('tv-fill-mode', playerState.tvFillMode);
-      dom.btnExitTvFill.classList.toggle('hidden', !playerState.tvFillMode);
-    }
-
-    // Eventos de botones principales
-    document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
-
-    document.addEventListener('fullscreenchange', () => {
-      const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
-      dom.fullscreenBtnText.textContent = isFs ? 'Salir Pantalla Completa' : 'Pantalla Completa';
-    });
-
-    // Única recarga manual mediante el botón 'Actualizar'
-    const handleManualUpdate = () => {
-      playStreamUrl(playerState.activeItem.url);
-      dom.toolsStatusMsg.textContent = `Señal actualizada manualmente: ${playerState.activeItem.name}`;
-    };
-
-    document.getElementById('btn-actualizar-header').addEventListener('click', handleManualUpdate);
-    document.getElementById('btn-offline-actualizar').addEventListener('click', handleManualUpdate);
-
-    // Panel de opciones y pruebas
-    document.getElementById('btn-toggle-tools').addEventListener('click', () => {
-      dom.toolsPanel.classList.toggle('hidden');
-    });
-
-    document.getElementById('btn-close-tools').addEventListener('click', () => {
-      dom.toolsPanel.classList.add('hidden');
-    });
-
-    document.getElementById('btn-state-live').addEventListener('click', () => {
-      playStreamUrl(playerState.activeItem.url);
-      dom.toolsStatusMsg.textContent = 'Estado: Señal en vivo activa.';
-    });
-
-    document.getElementById('btn-state-offline').addEventListener('click', () => {
-      showOfflineScreen('Transmisión Fuera de Horario');
-      dom.toolsStatusMsg.textContent = 'Estado: Pantalla roja de fuera de horario activa (sin recarga automática).';
-    });
-
-    document.getElementById('btn-load-custom-url').addEventListener('click', () => {
-      const customUrl = dom.inputStreamUrl.value.trim();
-      if (!customUrl) {
-        dom.toolsStatusMsg.textContent = 'Ingresa una URL válida terminada en .m3u8 o .mp4.';
-        return;
-      }
-      playerState.activeItem = {
-        ...playerState.activeItem,
-        url: customUrl,
-      };
-      playStreamUrl(customUrl);
-      dom.toolsStatusMsg.textContent = `Reproduciendo URL personalizada: ${customUrl}`;
-    });
-
-    document.getElementById('btn-tv-fill-toggle').addEventListener('click', () => {
-      setTvFillMode(!playerState.tvFillMode);
-    });
-
-    document.getElementById('btn-tv-fill-mobile').addEventListener('click', () => {
-      setTvFillMode(!playerState.tvFillMode);
-    });
-
-    dom.btnExitTvFill.addEventListener('click', () => {
-      setTvFillMode(false);
-    });
-
-    // Manejo de error del elemento video sin recargar la página
-    dom.video.addEventListener('error', () => {
-      if (!playerState.isOffline) {
-        showOfflineScreen('Señal Temporalmente en Espera');
-      }
-    });
-
-    // Inicialización al cargar la página
-    renderCatalog();
-    updatePlayerHeaderOSD(playerState.activeCategoryTitle, playerState.activeItem);
-    playStreamUrl(playerState.activeItem.url);
-  </script>
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderGrid();
+            if (channels.length > 0) {
+                playSiteChannel(0, false);
+                const isTvScreen = window.innerWidth >= 800 || /SmartTV|SMART-TV|Android TV|GoogleTV|BRAVIA|Tizen|Web0S|WebOS|AFT|Roku/i.test(navigator.userAgent || '');
+                if (isTvScreen) {
+                    setTimeout(() => {
+                        if (!isSiteFs) toggleSiteFullscreen();
+                    }, 250);
+                }
+            } else {
+                toggleSiteStandby(true);
+            }
+            initSiteMqtt();
+        });
+    </script>
 </body>
 </html>
