@@ -196,6 +196,14 @@
             <div id="siteBottomControls" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" class="absolute bottom-2 left-2 right-2 sm:left-auto z-30 flex items-center justify-end gap-1 overflow-x-auto no-scrollbar">
                 <button
                     type="button"
+                    onclick="event.stopPropagation(); toggleIptvOsd();"
+                    class="h-7 px-2.5 rounded-lg bg-sky-600/95 hover:bg-sky-500 text-white border border-sky-300/40 text-[10px] font-black flex items-center gap-1 shrink-0 shadow cursor-pointer transition"
+                >
+                    <i class="fa-solid fa-bars-staggered"></i>
+                    <span>Guía</span>
+                </button>
+                <button
+                    type="button"
                     onclick="event.stopPropagation(); toggleSiteAudio();"
                     class="h-7 px-2 rounded-lg bg-slate-950/90 hover:bg-slate-900 text-white border border-white/15 text-[10px] font-black flex items-center gap-1 shrink-0 shadow cursor-pointer transition"
                 >
@@ -243,6 +251,41 @@
                     <i class="fa-solid fa-plus"></i>
                     <span>CH</span>
                 </button>
+            </div>
+
+            <!-- Menú OSD Tipo IPTV en Pantalla (Categorías + Canales para Control Remoto) -->
+            <div id="iptvOsdOverlay" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()" class="hidden absolute inset-0 z-40 bg-slate-950/75 backdrop-blur-sm p-3 sm:p-5 flex items-center justify-start">
+                <div class="w-full max-w-2xl h-[86%] max-h-[430px] bg-[#060f24]/95 border border-sky-400/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                    <!-- Cabecera OSD -->
+                    <div class="px-3.5 py-2 bg-[#0b1938] border-b border-sky-500/30 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="px-2 py-0.5 rounded bg-sky-600 text-white text-[10px] font-black uppercase">GUÍA IPTV</span>
+                            <span class="text-xs font-extrabold text-slate-200 truncate">Usa ↑ ↓ ← → y Aceptar (OK)</span>
+                        </div>
+                        <button
+                            type="button"
+                            onclick="closeIptvOsd()"
+                            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-600 text-white text-[10px] font-black cursor-pointer transition"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+
+                    <!-- Cuerpo 2 Columnas: Categorías a la izquierda, Canales a la derecha -->
+                    <div class="flex-1 grid grid-cols-12 min-h-0">
+                        <!-- Columna Categorías -->
+                        <div id="osdCategoriesCol" class="col-span-5 sm:col-span-4 bg-[#040a18] border-r border-slate-800 p-2 overflow-y-auto no-scrollbar flex flex-col gap-1"></div>
+
+                        <!-- Columna Canales de la Categoría -->
+                        <div id="osdChannelsCol" class="col-span-7 sm:col-span-8 p-2 overflow-y-auto no-scrollbar flex flex-col gap-1"></div>
+                    </div>
+
+                    <!-- Pie con Ayuda de Teclas del Control -->
+                    <div class="px-3 py-1.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+                        <span><strong class="text-sky-400">+CH / -CH</strong> Cambiar canal</span>
+                        <span><strong class="text-emerald-400">OK / Enter</strong> Entrar al canal</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -302,6 +345,10 @@
         let isSiteFs = false;
         let isSiteRotated = false;
         let lastSignalTs = 0;
+        let isIptvOsdOpen = false;
+        let osdFocusPane = 'channels'; // 'categories' | 'channels'
+        let osdCatIndex = 0;
+        let osdChannelIndex = 0;
         const siteClients = [];
         const videoEl = document.getElementById('siteVideo');
         const siteWebFrame = document.getElementById('siteWebFrame');
@@ -502,6 +549,145 @@
             if (!channels.length) return;
             const next = (activeIdx + 1) % channels.length;
             playSiteChannel(next, true);
+        }
+
+        function getOsdCategoriesList() {
+            const catKeys = Object.keys(SITE_CAT_META);
+            const activeCats = catKeys.filter((k) => channels.some((ch) => classifySiteCat(ch) === k));
+            return activeCats.length > 0 ? activeCats : catKeys;
+        }
+
+        function getOsdChannelsForCurrentCat() {
+            const cats = getOsdCategoriesList();
+            const safeCatIdx = ((osdCatIndex % cats.length) + cats.length) % cats.length;
+            osdCatIndex = safeCatIdx;
+            const selectedCatKey = cats[safeCatIdx];
+            return channels
+                .map((ch, globalIdx) => ({ ch, globalIdx }))
+                .filter(({ ch }) => classifySiteCat(ch) === selectedCatKey);
+        }
+
+        function renderIptvOsd() {
+            const catsCol = document.getElementById('osdCategoriesCol');
+            const chCol = document.getElementById('osdChannelsCol');
+            if (!catsCol || !chCol) return;
+
+            const cats = getOsdCategoriesList();
+            osdCatIndex = ((osdCatIndex % cats.length) + cats.length) % cats.length;
+            const currentCatKey = cats[osdCatIndex];
+
+            catsCol.innerHTML = '';
+            cats.forEach((catKey, idx) => {
+                const meta = SITE_CAT_META[catKey];
+                const count = channels.filter((c) => classifySiteCat(c) === catKey).length;
+                const isSelectedCat = idx === osdCatIndex;
+                const isFocused = isSelectedCat && osdFocusPane === 'categories';
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = () => {
+                    osdCatIndex = idx;
+                    osdChannelIndex = 0;
+                    osdFocusPane = 'channels';
+                    renderIptvOsd();
+                };
+                btn.className = `w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-1.5 cursor-pointer transition ${
+                    isFocused
+                        ? 'bg-sky-500 text-slate-950 font-black ring-2 ring-white'
+                        : isSelectedCat
+                            ? 'bg-sky-600/30 border border-sky-400/60 text-white font-extrabold'
+                            : 'bg-slate-900/70 hover:bg-slate-800 text-slate-300 font-bold'
+                }`;
+                btn.innerHTML = `
+                    <span class="text-[11px] truncate flex items-center gap-1.5">
+                        <i class="fa-solid ${meta.icon} text-[10px]"></i>
+                        <span class="truncate">${meta.label}</span>
+                    </span>
+                    <span class="text-[10px] font-mono opacity-80 shrink-0">${count}</span>
+                `;
+                catsCol.appendChild(btn);
+                if (isSelectedCat) {
+                    setTimeout(() => btn.scrollIntoView({ block: 'nearest' }), 0);
+                }
+            });
+
+            const listInCat = getOsdChannelsForCurrentCat();
+            if (listInCat.length > 0) {
+                osdChannelIndex = ((osdChannelIndex % listInCat.length) + listInCat.length) % listInCat.length;
+            } else {
+                osdChannelIndex = 0;
+            }
+
+            chCol.innerHTML = '';
+            if (!listInCat.length) {
+                chCol.innerHTML = `<p class="text-xs text-slate-400 p-4 text-center">No hay canales en esta categoría.</p>`;
+                return;
+            }
+
+            listInCat.forEach(({ ch, globalIdx }, idx) => {
+                const isCursor = idx === osdChannelIndex;
+                const isFocused = isCursor && osdFocusPane === 'channels';
+                const isLive = globalIdx === activeIdx;
+                const chNum = String(globalIdx + 1).padStart(2, '0');
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = () => {
+                    closeIptvOsd();
+                    playSiteChannel(globalIdx, true);
+                };
+                btn.className = `w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-2 cursor-pointer transition ${
+                    isFocused
+                        ? 'bg-emerald-500 text-slate-950 font-black ring-2 ring-white shadow-lg'
+                        : isCursor
+                            ? 'bg-slate-800 border border-emerald-400/50 text-white font-extrabold'
+                            : 'bg-slate-950/80 hover:bg-slate-900 text-slate-200 font-bold'
+                }`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black shrink-0 ${
+                            isFocused ? 'bg-slate-950 text-emerald-400' : 'bg-sky-600/30 text-sky-300'
+                        }">${chNum}</span>
+                        <span class="text-xs truncate">${ch.title}</span>
+                    </div>
+                    ${isLive ? `<span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${isFocused ? 'bg-slate-950 text-white' : 'bg-red-600 text-white'}">EN VIVO</span>` : ''}
+                `;
+                chCol.appendChild(btn);
+                if (isCursor) {
+                    setTimeout(() => btn.scrollIntoView({ block: 'nearest' }), 0);
+                }
+            });
+        }
+
+        function openIptvOsd() {
+            const overlay = document.getElementById('iptvOsdOverlay');
+            if (!overlay) return;
+            isIptvOsdOpen = true;
+            osdFocusPane = 'channels';
+
+            const cats = getOsdCategoriesList();
+            const currentCh = channels[activeIdx];
+            const currentCat = currentCh ? classifySiteCat(currentCh) : cats[0];
+            const foundCatIdx = cats.indexOf(currentCat);
+            osdCatIndex = foundCatIdx >= 0 ? foundCatIdx : 0;
+
+            const listInCat = getOsdChannelsForCurrentCat();
+            const foundChIdx = listInCat.findIndex((x) => x.globalIdx === activeIdx);
+            osdChannelIndex = foundChIdx >= 0 ? foundChIdx : 0;
+
+            overlay.classList.remove('hidden');
+            renderIptvOsd();
+        }
+
+        function closeIptvOsd() {
+            const overlay = document.getElementById('iptvOsdOverlay');
+            isIptvOsdOpen = false;
+            if (overlay) overlay.classList.add('hidden');
+        }
+
+        function toggleIptvOsd() {
+            if (isIptvOsdOpen) closeIptvOsd();
+            else openIptvOsd();
         }
 
         function playSiteChannel(idx, recordHistory = true) {
@@ -812,12 +998,90 @@
         });
 
         window.addEventListener('keydown', (ev) => {
-            if (ev.key === 'ChannelUp' || ev.key === 'PageUp') {
+            const key = ev.key;
+
+            // Teclas dedicadas +CH y -CH siempre cambian de canal como en IPTV
+            if (key === 'ChannelUp' || key === 'PageUp' || key === '+' || key === '=') {
+                ev.preventDefault();
                 playNextChannel();
-            } else if (ev.key === 'ChannelDown' || ev.key === 'PageDown') {
+                if (isIptvOsdOpen) openIptvOsd();
+                return;
+            }
+            if (key === 'ChannelDown' || key === 'PageDown' || key === '-') {
+                ev.preventDefault();
                 playPrevSiteChannel();
-            } else if (ev.key === 'Escape' || ev.key === 'Backspace') {
-                if (isSiteFs) toggleSiteFullscreen();
+                if (isIptvOsdOpen) openIptvOsd();
+                return;
+            }
+
+            // Si la Guía IPTV está abierta en pantalla, navegamos categorías y canales con el control
+            if (isIptvOsdOpen) {
+                if (key === 'ArrowLeft') {
+                    ev.preventDefault();
+                    osdFocusPane = 'categories';
+                    renderIptvOsd();
+                } else if (key === 'ArrowRight') {
+                    ev.preventDefault();
+                    osdFocusPane = 'channels';
+                    renderIptvOsd();
+                } else if (key === 'ArrowUp') {
+                    ev.preventDefault();
+                    if (osdFocusPane === 'categories') {
+                        const cats = getOsdCategoriesList();
+                        osdCatIndex = (osdCatIndex - 1 + cats.length) % cats.length;
+                        osdChannelIndex = 0;
+                    } else {
+                        const list = getOsdChannelsForCurrentCat();
+                        if (list.length) osdChannelIndex = (osdChannelIndex - 1 + list.length) % list.length;
+                    }
+                    renderIptvOsd();
+                } else if (key === 'ArrowDown') {
+                    ev.preventDefault();
+                    if (osdFocusPane === 'categories') {
+                        const cats = getOsdCategoriesList();
+                        osdCatIndex = (osdCatIndex + 1) % cats.length;
+                        osdChannelIndex = 0;
+                    } else {
+                        const list = getOsdChannelsForCurrentCat();
+                        if (list.length) osdChannelIndex = (osdChannelIndex + 1) % list.length;
+                    }
+                    renderIptvOsd();
+                } else if (key === 'Enter' || key === ' ' || key === 'Select' || key === 'OK') {
+                    ev.preventDefault();
+                    if (osdFocusPane === 'categories') {
+                        osdFocusPane = 'channels';
+                        renderIptvOsd();
+                    } else {
+                        const list = getOsdChannelsForCurrentCat();
+                        const chosen = list[osdChannelIndex];
+                        closeIptvOsd();
+                        if (chosen) playSiteChannel(chosen.globalIdx, true);
+                    }
+                } else if (key === 'Escape' || key === 'Backspace' || key === 'GoBack') {
+                    ev.preventDefault();
+                    closeIptvOsd();
+                }
+                return;
+            }
+
+            // Con la Guía cerrada: Enter/OK abre la Guía IPTV; ↑/↓ cambian canal rápido
+            if (key === 'Enter' || key === 'Select' || key === 'OK') {
+                ev.preventDefault();
+                openIptvOsd();
+            } else if (key === 'ArrowUp') {
+                ev.preventDefault();
+                playNextChannel();
+            } else if (key === 'ArrowDown') {
+                ev.preventDefault();
+                playPrevSiteChannel();
+            } else if (key === 'ArrowLeft' || key === 'ArrowRight') {
+                ev.preventDefault();
+                openIptvOsd();
+            } else if (key === 'Escape' || key === 'Backspace' || key === 'GoBack') {
+                if (isSiteFs) {
+                    ev.preventDefault();
+                    toggleSiteFullscreen();
+                }
             }
         });
 
