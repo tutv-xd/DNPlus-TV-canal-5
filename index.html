@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- mpegts.js para enlaces IPTV .ts en vivo -->
+    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@latest/dist/mpegts.min.js"></script>
     <!-- MQTT.js -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
@@ -295,6 +297,7 @@
         let activeIdx = 0;
         let siteHistory = [];
         let hls = null;
+        let siteMpegts = null;
         let siteAudioUnlocked = false;
         let isSiteFs = false;
         let isSiteRotated = false;
@@ -362,9 +365,14 @@
             return /\.m3u8(\?|$)/i.test(clean) || /\/hls\/|playlist\.m3u8|chunklist/i.test(clean);
         }
 
+        function isTsStreamUrl(u) {
+            const clean = String(u || '').trim();
+            return /\.ts(\?|$)/i.test(clean) || /\/play\/|\/live\/.*\/\d+$/i.test(clean);
+        }
+
         function isDirectSiteVideo(u) {
             const clean = String(u || '').trim();
-            return isHlsUrl(clean) || /\.(mp4|mpg|mpeg|mkv|avi|webm|ogg|m4v|mov)(\?|$)/i.test(clean);
+            return isHlsUrl(clean) || isTsStreamUrl(clean) || /\.(mp4|mpg|mpeg|mkv|avi|webm|ogg|m4v|mov)(\?|$)/i.test(clean);
         }
 
         function saveState() {
@@ -534,6 +542,15 @@
                 try { hls.destroy(); } catch (e) {}
                 hls = null;
             }
+            if (siteMpegts) {
+                try {
+                    siteMpegts.pause();
+                    siteMpegts.unload();
+                    siteMpegts.detachMediaElement();
+                    siteMpegts.destroy();
+                } catch (e) {}
+                siteMpegts = null;
+            }
 
             const cleanUrl = String(item.url || '').trim();
             if (!isDirectSiteVideo(cleanUrl)) {
@@ -573,23 +590,34 @@
                         updateSiteMuteUi();
                     }).catch(() => {
                         videoEl.muted = true;
+                        updateSiteMuteUi();
                         videoEl.play().then(() => {
                             setSiteDisneyLoader(false);
-                            updateSiteMuteUi();
                         }).catch(() => {
                             setSiteDisneyLoader(false);
                         });
                     });
                 };
 
-                videoEl.onplaying = () => setSiteDisneyLoader(false);
-                videoEl.onended = () => {
-                    if (cat === '247' && channels.length > 1) {
-                        playNextChannel();
-                    }
-                };
-
-                if (isHlsUrl(cleanUrl) && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                if (isTsStreamUrl(cleanUrl) && typeof mpegts !== 'undefined' && mpegts.getFeatureList().mseLivePlayback) {
+                    siteMpegts = mpegts.createPlayer({
+                        type: 'mpegts',
+                        isLive: true,
+                        url: cleanUrl
+                    }, {
+                        enableWorker: false,
+                        enableStashBuffer: false,
+                        stashInitialSize: 128,
+                        liveBufferLatencyChasing: true
+                    });
+                    siteMpegts.attachMediaElement(videoEl);
+                    siteMpegts.load();
+                    siteMpegts.on(mpegts.Events.ERROR, () => {
+                        setSiteDisneyLoader(false);
+                        showNotice('Error al cargar señal .TS (revisa HTTP/HTTPS)', 2600);
+                    });
+                    startPlay();
+                } else if (isHlsUrl(cleanUrl) && typeof Hls !== 'undefined' && Hls.isSupported()) {
                     let retries = 0;
                     hls = new Hls({
                         enableWorker: false,
